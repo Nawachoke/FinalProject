@@ -16,8 +16,8 @@ class TrayFinder:
     def HSV_threshold(self):
         self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
         self.blur = cv2.GaussianBlur(self.gray, (3,3), 0)
-        lower = np.array([0,   158,  150])
-        upper = np.array([255,  255, 255])
+        lower = np.array([0,  178,  136])
+        upper = np.array([145,  255, 254])
         self.mask = cv2.inRange(self.blur, lower, upper)
         return self.mask
 
@@ -48,17 +48,25 @@ class TrayFinder:
             area = cv2.contourArea(cnt)
             midpoint.append([x1, y1])
             areas.append(area)
-            print(f'Area of contour {i+1}:', area)
+            # print(f'Area of contour {i+1}:', area)
         areas = np.array(areas)
         midpoint = np.array(midpoint)
+        # print(areas)
+        # print(midpoint)
+        # print(np.mean(areas), np.mean(areas) + np.mean(areas)*0.05)
+        # aerr = []
         # for i in range(len(areas)):
-        #     if areas[i] > 
-        # if areas[i] >= areas.mean():
+        #     if areas[i] < (np.mean(areas) + (np.mean(areas)*0.2)):
+        #         print(i)
+        #         aerr.append(i)
+        # filter_areas = [value for index, value in enumerate(areas) if index not in aerr]
+        # print(filter_areas)
+        # filter_midpoint = [value for index, value in enumerate(midpoint) if index not in aerr]
+        # print(filter_midpoint)
         # midpoint.sort(axis=0)
         for i in range(len(midpoint)):
                 cv2.putText(self.contoured_image, str(i+1),(midpoint[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-        print(midpoint)
-        print(np.mean(areas), np.median(areas))
+                cv2.circle(self.contoured_image, (midpoint[i]), radius=2, color=(255, 255, 255), thickness=-1)
     #optional function
     def Copy_image(self):
         pass
@@ -79,7 +87,7 @@ class TrayFinder:
     #     print(self.file_path)
 
 if __name__ == '__main__':
-    Find = TrayFinder(file_path='C:/Project/FinalProject/Images/test_image_twinbar_top_2.png')
+    Find = TrayFinder(file_path='C:/Project/FinalProject/Images/test_image_cam_jig2_0.png')
     # mid_points = Find.FindMidpoint()
     # mid_points.sort(axis=1)
     # print(mid_points)
