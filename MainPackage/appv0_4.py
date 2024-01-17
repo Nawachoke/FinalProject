@@ -4,7 +4,7 @@ import customtkinter as ctk
 import sys
 import json
 # sys.path.insert(0, 'C:/Project/FinalProject/ImageProcessing/TrayFinder2.py')
-# import TrayFinder2
+from ImageProcessing import TrayFinder2 as TF
 import pandas as pd
 import numpy as np
 from CTkTable import *
