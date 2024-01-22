@@ -5,7 +5,7 @@ import tkinter.messagebox
 from typing import Optional, Tuple, Union
 import customtkinter as ctk
 import json
-# import ImageProcessing.ImgProc2 as IP
+import ImageProcessing.ImgProc2 as IP
 import pandas as pd
 import numpy as np
 from CTkTable import *

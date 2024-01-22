@@ -1,7 +1,25 @@
 {
     "cSpell.words": [
+        "columnspan",
         "costomtkinter",
+        "ctrd",
+        "ctrs",
         "customtkinter",
-        "imutils"
+        "Findpeaks",
+        "hier",
+        "hsplit",
+        "imread",
+        "imshow",
+        "imutils",
+        "imwrite",
+        "padx",
+        "pady",
+        "peakc",
+        "peakr",
+        "sumall",
+        "Sumval",
+        "vsplit",
+        "xticks",
+        "yticks"
     ]
 }
