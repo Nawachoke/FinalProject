@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 import imutils
+import glob
 
 class TrayFinder:
     def __init__(self, file_path):
@@ -16,8 +17,8 @@ class TrayFinder:
     def HSV_threshold(self):
         self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
         self.blur = cv2.GaussianBlur(self.gray, (3,3), 0)
-        lower = np.array([0,  178,  136])
-        upper = np.array([145,  255, 254])
+        lower = np.array([0,   137,  163])
+        upper = np.array([255,  228, 239])
         self.mask = cv2.inRange(self.blur, lower, upper)
         return self.mask
 
@@ -25,8 +26,8 @@ class TrayFinder:
         masked = self.HSV_threshold()
         kernel = np.ones((3,3), np.uint8)
         # self.morph = cv2.erode(masked, kernel, iterations=1)
-        self.morph = cv2.morphologyEx(masked, cv2.MORPH_OPEN, kernel, iterations=1)
-        ctrs, hier = cv2.findContours(self.morph, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # self.morph = cv2.morphologyEx(masked, cv2.MORPH_OPEN, kernel, iterations=1)
+        ctrs, hier = cv2.findContours(self.mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         self.contoured_image = cv2.drawContours(self.image, ctrs, -1, (0, 0, 255), 2)
 
         return ctrs
@@ -87,11 +88,19 @@ class TrayFinder:
     #     print(self.file_path)
 
 if __name__ == '__main__':
-    Find = TrayFinder(file_path='C:/Project/FinalProject/Images/test_image_cam_jig2_0.png')
+    # Find = TrayFinder(file_path='C:/Project/FinalProject/Images/test_image_cam_jig2_0.png')
     # mid_points = Find.FindMidpoint()
     # mid_points.sort(axis=1)
     # print(mid_points)
-    Find.FindMidpoint()
-    Find.ShowImage('midpoints', Find.contoured_image)
-    Find.ShowImage('blur', Find.morph)
+    # Find.FindMidpoint()
+    # Find.ShowImage('midpoints', Find.contoured_image)
+    # Find.ShowImage('blur', Find.morph)
+    paths = glob.glob("C:/Project/FinalProject/MainPackage/ImageProcessing/Images/*.png")
+    count = 0
+    for file_path in paths[:12]:
+        count += 1
+        tray_finder = TrayFinder(file_path)
+        tray_finder.FindMidpoint()
+        tray_finder.ShowImage(f'midpoint{count}', tray_finder.contoured_image)
+        tray_finder.ShowImage(f'gray{count}', tray_finder.morph)
 

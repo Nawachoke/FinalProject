@@ -252,9 +252,9 @@ class App(ctk.CTk):
         self.Status_time_data.configure(text=hours_string + ':' + minutes_string + ':' + seconds_string)
         self.update_time = self.Status_time_data.after(1000, self.update)
         # print(self.time_counter)
-        self.CheckState()
+        self.CheckState_on_time()
 
-    def CheckState(self):
+    def CheckState_on_time(self):
         try:
             if self.time_counter <= self.monitoring_data['time'][self.time_indexer]:
                 self.table.deselect_row(self.time_indexer)

@@ -56,6 +56,9 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
 
+        self.percentage_data = str("xx")
+        print(self.winfo_children)
+
         self.title("Cells stain controller")
         self.geometry(f"{1200}x{640}")
         # configure grid layout (4x4)
@@ -98,6 +101,8 @@ class App(ctk.CTk):
         self.progress_bar_label.grid(row=0, column=0, padx=10, pady=(10, 10))
         self.progress_bar = ctk.CTkProgressBar(self.progress_bar_frame, progress_color="green")
         self.progress_bar.grid(row=0, column=1, columnspan=6, padx=10, pady=10)
+        self.percentage_label = ctk.CTkLabel(self.progress_bar_frame, text=f"{self.percentage_data} / 100%")
+        self.percentage_label.grid(row=0, column=8, sticky='e')
         
         #create table frame
 
@@ -126,34 +131,48 @@ class App(ctk.CTk):
     def pause_event(self):
         pass
 
+    def show_table(self):
+        RawData = [self.monitoring_data['solution'],
+                   self.monitoring_data['time'],
+                   self.monitoring_data['cycle']]
+        name_list = ['solution', 'time', 'cycle']
+        pivoted_value = list(map(list, zip(*RawData)))
+        pivoted_value.insert(0, name_list)
+
+        self.table = CTkTable(master=self, values=pivoted_value, font=('Arial', 16))
+        self.table.grid(row=0, column=2, padx=20, pady=20)
+
     def mode_event(self, mode : str):
         self.mode = mode
         if mode == "H&E":
-            warn_text = "Start with H & E mode"
+            message = "Start with H & E mode"
             mode_number = 1
-        elif mode == "":
-            warn_text = "Start with IHC mode"
+        elif mode == "IHC":
+            message = "Start with IHC mode"
             mode_number = 2
         else:
             pass
 
-        Mode_confirm = askyesno(message=warn_text, focus=True)
+        Mode_confirm = askyesno(message=message, focus=True)
         answer = Mode_confirm.get_result()
 
         if answer == True:
-            self.mode_data = self.Read_Data(mode_number)
+            self.mode_name = self.Read_Data(mode_number)
+            # self.delete_widget(master=self, column=3)
+            # self.table.grid_forget()
+            self.show_table()
             
     
-    def Read_Data(self, mode_number : str):
+    def Read_Data(self, mode_number):
         file = open("C:/Project/FinalProject/MainPackage/mode_conf.json")
         data = json.load(file)
-        mode_name = data['mode ' + mode_number]['name']
+        mode_name = data['mode ' + str(mode_number)]['name']
 
         self.Mode_data = pd.read_json("C:/Project/seniorProject/mainProgram/mode_conf.json")
 
-        self.monitoring_data = pd.DataFrame({  'solution'  : self.All_mode_data['mode ' + mode_number]['solution'],
-                                                'time'     : self.All_mode_data['mode ' + mode_number]['time'],
-                                                'cycle'    : self.All_mode_data['mode ' + mode_number]['cycle']})
+        self.monitoring_data = pd.DataFrame({  'solution'  : self.Mode_data['mode ' + str(mode_number)]['solution'],
+                                                'time'     : self.Mode_data['mode ' + str(mode_number)]['time'],
+                                                'cycle'    : self.Mode_data['mode ' + str(mode_number)]['cycle']})
         
         return mode_name
 
