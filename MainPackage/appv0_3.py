@@ -1,5 +1,4 @@
 # Don't forget to create venv
-
 import tkinter
 import tkinter.messagebox
 from typing import Optional, Tuple, Union
@@ -9,6 +8,7 @@ import ImageProcessing.ImgProc2 as IP
 import pandas as pd
 import numpy as np
 from CTkTable import *
+import os
 
 ctk.set_appearance_mode("System") # Modes: "System" (standard), "Dark", "Light"
 ctk.set_default_color_theme("green") # Themes: "blue" (standard), "green", "dark-blue"
@@ -52,7 +52,8 @@ class askyesno(ctk.CTkToplevel):
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        
+
+
         self.mode_data = None
         self.hours, self.minutes, self.seconds = 0,0,0
         self.running = False
