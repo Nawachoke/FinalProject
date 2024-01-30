@@ -13,6 +13,7 @@ class App(Tk):
         super().__init__(screenName, baseName, className, useTk, sync, use)
         # self.Main_frame = tkinter.Label
         self.pose_counter = 0
+        
 
         self.data = [(random.randint(0,100), random.randint(0,100), random.randint(1,10)) for _ in range(18)]
         self.ser = serial.Serial('COM4', 9600)

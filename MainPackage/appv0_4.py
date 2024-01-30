@@ -3,7 +3,6 @@ from typing import Optional, Tuple, Union
 import customtkinter as ctk
 import sys
 import json
-# sys.path.insert(0, 'C:/Project/FinalProject/ImageProcessing/TrayFinder2.py')
 from ImageProcessing import TrayFinder2 as TF
 import pandas as pd
 import numpy as np
@@ -11,6 +10,9 @@ from CTkTable import *
 import threading
 import os
 from PIL import Image
+# from SerialComms import Comms
+import random
+import serial
 
 ctk.set_appearance_mode("System") # Modes: "System" (standard), "Dark", "Light"
 ctk.set_default_color_theme("dark-blue") # Themes: "blue" (standard), "green", "dark-blue"
@@ -26,7 +28,6 @@ class askyesno(ctk.CTkToplevel):
 
     def init_ui(self):
         self.geometry("300x200")
-        
         self.title("Confirmation")
         self.resizable(False, False)
         message_label = ctk.CTkLabel(self, text=self.message)
@@ -59,8 +60,11 @@ class askyesno(ctk.CTkToplevel):
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.iconbitmap("C:/Project/FinalProject/image/icons8-cell-50.ico")
+        self.data = [(random.randint(0,100), random.randint(0,100), random.randint(1,10)) for _ in range(18)]
+        self.ser = serial.Serial('COM4', 9600)
 
+        self.iconbitmap("C:/Project/FinalProject/image/icons8-cell-50.ico")
+        self.response = None
         self.percentage_data = str("xx")
 
         self.title("Cells stain controller")
@@ -99,17 +103,13 @@ class App(ctk.CTk):
 
         # create progress bar
         self.progress_bar_frame = ctk.CTkFrame(self)
-        # self.progress_bar_frame.grid_columnconfigure(8)
-        self.progress_bar_frame.grid(row=3, column = 1, columnspan=2, padx=10, pady=(20,20), sticky="nsew")
+        self.progress_bar_frame.grid(row=3, column = 1, columnspan=2, padx=10, pady=10, sticky="nsew")
         self.progress_bar_label = ctk.CTkLabel(self.progress_bar_frame, text="Progression :")
         self.progress_bar_label.grid(row=0, column=0, padx=10, pady=(10, 10))
         self.progress_bar = ctk.CTkProgressBar(self.progress_bar_frame, progress_color="green", width=700)
         self.progress_bar.grid(row=0, column=1, columnspan=6, padx=10, pady=10, sticky="nsew")
         self.percentage_label = ctk.CTkLabel(self.progress_bar_frame, text=f"{self.percentage_data} / 100%")
         self.percentage_label.grid(row=0, column=8, sticky='e')
-        # self.progressbar = ctk.CTkProgressBar(self, progress_color="green")
-        # self.progressbar.grid(row=2, column=1, columnspan=1, padx=10, pady=10, sticky="nsew")
-        # self.progress_bar.start()
 
         #Monitoring frame
         self.monitoring_frame = ctk.CTkFrame(self, width=100, corner_radius=20)
@@ -118,7 +118,7 @@ class App(ctk.CTk):
         self.monitor_label.grid(row=0, column=0, sticky="news")
 
         self.Protocol_label = ctk.CTkLabel(self.monitoring_frame, text="Protocol : ", font=('Arial', 16, 'bold'))
-        self.Status_time_label = ctk.CTkLabel(self.monitoring_frame, text="Status time : ", font=('Arial', 16, 'bold'))
+        self.Run_time_label = ctk.CTkLabel(self.monitoring_frame, text="Run time : ", font=('Arial', 16, 'bold'))
         self.Current_solution_label = ctk.CTkLabel(self.monitoring_frame, text="Current solution : ", font=('Arial', 16, 'bold'))
         self.Next_solution_label = ctk.CTkLabel(self.monitoring_frame, text ="Next solution : ", font=('Arial', 16, 'bold'))
         self.Left_rack_label = ctk.CTkLabel(self.monitoring_frame, text="Left rack : ", font=('Arial', 16, 'bold'))
@@ -127,8 +127,8 @@ class App(ctk.CTk):
             status_widget.grid_configure(row=mf, column=0, sticky = "w", padx=20, pady=20)
             mf+=1
 
-        self.Status_time_data = ctk.CTkLabel(self.monitoring_frame, text= "", anchor="w", font=('Arial', 16, 'bold'))
-        self.Status_time_data.grid(row = 2, column=1, sticky = "w", padx=20, pady=20)
+        self.Run_time_data = ctk.CTkLabel(self.monitoring_frame, text= "", anchor="w", font=('Arial', 16, 'bold'))
+        self.Run_time_data.grid(row = 2, column=1, sticky = "w", padx=20, pady=20)
         self.Current_solution_data = ctk.CTkLabel(self.monitoring_frame, text="", anchor="w", font=('Arial', 16, 'bold'))
         self.Current_solution_data.grid(row = 3, column = 1 , sticky="w", padx=20, pady=20)
         self.Next_solution_data = ctk.CTkLabel(self.monitoring_frame, text= "", anchor="w", font=('Arial', 16, 'bold'))
@@ -157,13 +157,16 @@ class App(ctk.CTk):
         pass
     
     def start_event(self):
-        pass
+        Start_confirm = askyesno(message='Start machine?', focus=True)
+        answer = Start_confirm.get_result()
 
     def stop_event(self):
-        pass
+        Stop_confirm = askyesno(message="Stop machine?", focus=True)
+        answer = Stop_confirm.get_result()
 
     def pause_event(self):
-        pass
+        Pause_confirm = askyesno(message="Pause_machine?", focus=True)
+        answer = Pause_confirm.get_result()
 
     def show_table(self):
         RawData = [self.monitoring_data['solution'],
@@ -195,26 +198,40 @@ class App(ctk.CTk):
             self.DestroyTable()
             self.show_table()
             
+    def DestroyTable(self):
+        for widget in self.Table_frame.winfo_children() :
+            widget.destroy()
     
     def Read_Data(self, mode_number):
         file = open("C:/Project/FinalProject/MainPackage/mode_conf.json")
         data = json.load(file)
         mode_name = data['mode ' + str(mode_number)]['name']
-
         self.Mode_data = pd.read_json("C:/Project/seniorProject/mainProgram/mode_conf.json")
-
         self.monitoring_data = pd.DataFrame({  'solution'  : self.Mode_data['mode ' + str(mode_number)]['solution'],
                                                 'time'     : self.Mode_data['mode ' + str(mode_number)]['time'],
                                                 'cycle'    : self.Mode_data['mode ' + str(mode_number)]['cycle']})
-        
         return mode_name
 
     def DataOverwrite(self):
         pass
+    
+    #communication thread
+    def receive_response(self):
+        i=1
+        try:
+            while True:
+                if self.ser.in_waiting > 0:
+                    self.response  = self.ser.readline().decode().strip()
+                    print(f"response : {self.response}, iteration : {i}")
+                    i+=1
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.ser.close()
+        print(self.response)
 
-    def DestroyTable(self):
-        for widget in self.Table_frame.winfo_children() :
-            widget.destroy()
+    def SendData(self):
+        pass
 
 if __name__ == "__main__":
     app = App()
