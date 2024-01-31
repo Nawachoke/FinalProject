@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from CTkTable import *
 import threading
+import time
 import os
 from PIL import Image
 # from SerialComms import Comms
@@ -60,8 +61,13 @@ class askyesno(ctk.CTkToplevel):
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.data = [(random.randint(0,100), random.randint(0,100), random.randint(1,10)) for _ in range(18)]
-        self.ser = serial.Serial('COM4', 9600)
+        # self.data = [(random.randint(0,100), random.randint(0,100), random.randint(1,10)) for _ in range(18)]
+        self.ser = serial.Serial('COM3', 9600)
+        self.iterator = 0
+        self.running = False
+        self.hours, self.minutes, self.seconds = 0,0,0
+
+        self.mock_data = [(random.randint(0, 100), random.randint(0, 100), random.randint(1, 10)) for _ in range(18)]
 
         self.iconbitmap("C:/Project/FinalProject/image/icons8-cell-50.ico")
         self.response = None
@@ -126,7 +132,9 @@ class App(ctk.CTk):
         for status_widget in self.monitoring_frame.winfo_children() : 
             status_widget.grid_configure(row=mf, column=0, sticky = "w", padx=20, pady=20)
             mf+=1
-
+        
+        self.Protocol_data = ctk.CTkLabel(self.monitoring_frame, text="", anchor="w", justify="left", font=('Arial', 16, 'bold'))
+        self.Protocol_data.grid(row=1, column=1, padx=20, pady=20, sticky="w")
         self.Run_time_data = ctk.CTkLabel(self.monitoring_frame, text= "", anchor="w", font=('Arial', 16, 'bold'))
         self.Run_time_data.grid(row = 2, column=1, sticky = "w", padx=20, pady=20)
         self.Current_solution_data = ctk.CTkLabel(self.monitoring_frame, text="", anchor="w", font=('Arial', 16, 'bold'))
@@ -145,6 +153,8 @@ class App(ctk.CTk):
         self.scaling_optionmenu.set("100")
         self.mode_optionmenu.set("MODE")
         self.progress_bar.set(0)
+        thread1 = threading.Thread(target=self.receive_response)
+        thread1.start()
 
     def change_scaling_event(self, new_scaling: str):
         new_scaling_float = int(new_scaling.replace("%", "")) / 100
@@ -159,14 +169,23 @@ class App(ctk.CTk):
     def start_event(self):
         Start_confirm = askyesno(message='Start machine?', focus=True)
         answer = Start_confirm.get_result()
+        data_pack = {"x": 0, "y": 0, "t": 0}
+        if answer:
+            self.Run_time_data.configure(text = '00:00:00')
+            self.start_timer()
+            self.send_package(command="position", data_list=data_pack)
 
     def stop_event(self):
         Stop_confirm = askyesno(message="Stop machine?", focus=True)
         answer = Stop_confirm.get_result()
+        if answer:
+            self.send_package(command="stop")
 
     def pause_event(self):
         Pause_confirm = askyesno(message="Pause_machine?", focus=True)
         answer = Pause_confirm.get_result()
+        if answer:
+            self.send_package(command="pause")
 
     def show_table(self):
         RawData = [self.monitoring_data['solution'],
@@ -195,8 +214,11 @@ class App(ctk.CTk):
 
         if answer == True:
             self.mode_name = self.Read_Data(mode_number)
+            self.Protocol_data.configure(text=self.mode_name)
+            self.iterator = 0
             self.DestroyTable()
             self.show_table()
+            self.Status_update()
             
     def DestroyTable(self):
         for widget in self.Table_frame.winfo_children() :
@@ -217,21 +239,73 @@ class App(ctk.CTk):
     
     #communication thread
     def receive_response(self):
-        i=1
+        data_pack = {"x": 0, "y": 0, "t": 0}
         try:
             while True:
                 if self.ser.in_waiting > 0:
-                    self.response  = self.ser.readline().decode().strip()
-                    print(f"response : {self.response}, iteration : {i}")
-                    i+=1
+                    self.response = self.ser.readline().decode('utf-8').strip()
+                    print(f"response : {self.response}")
+                    if self.response == "request" and self.iterator != len(self.mock_data):
+                        print(self.iterator)
+                        data_pack.update({"x":self.mock_data[self.iterator][0], "y":self.mock_data[self.iterator][1], "t":self.mock_data[self.iterator][2]})
+                        self.send_package("position", data_list=data_pack)
+                        time.sleep(0.5)
+                        self.iterator += 1
+                        self.Status_update()
+        except Exception as e:
+            print(f"Error in receive_response: {e}")
         except KeyboardInterrupt:
             pass
-        finally:
-            self.ser.close()
-        print(self.response)
 
-    def SendData(self):
-        pass
+    def send_package(self, command, data_list=None):
+        package = {"command": command, "data": data_list}
+        json_data = json.dumps(package)
+        self.ser.write((json_data + '\n').encode('ascii'))
+        self.ser.flush()
+        print(f"Sent JSON package: {json_data}")
+
+    def Status_update(self):
+        self.table.deselect_row(self.iterator)
+        self.Current_solution_data.configure(text= self.monitoring_data['solution'][self.iterator])
+        self.Next_solution_data.configure(text = self.monitoring_data['solution'][self.iterator +1])
+        self.Left_rack_data.configure(text = str(len(self.monitoring_data['solution']) - self.iterator) + ' rack(s)')
+        self.table.select_row(self.iterator+1)
+
+    #timer function
+    def start_timer(self):
+        if not self.running:
+            self.Run_time_data.after(1000)
+            self.update()
+            self.running = True
+    
+    def pause_timer(self):
+        if self.running:
+            self.Run_time_data.after_cancel(self.update_time)
+            self.running = False
+    
+    def reset_timer(self):
+        if self.running:
+            self.Run_time_data.after_cancel(self.update_time)
+            self.running = False
+
+        self.hours, self.minutes, self.seconds = 0,0,0
+        self.Run_time_data.configure(text = '00:00:00')
+    
+    def update(self):
+        # self.time_counter += 1
+        self.seconds += 1
+        if self.seconds == 60:
+            self.minutes += 1
+            self.seconds = 0
+        if self.minutes == 60:
+            self.hours += 1
+            self.minutes = 0
+
+        hours_string = f'{self.hours}' if self.hours > 9 else f'0{self.hours}'
+        minutes_string = f'{self.minutes}' if self.minutes > 9 else f'0{self.minutes}'
+        seconds_string = f'{self.seconds}' if self.seconds > 9 else f'0{self.seconds}'
+        self.Run_time_data.configure(text=hours_string + ':' + minutes_string + ':' + seconds_string)
+        self.update_time = self.Run_time_data.after(1000, self.update)
 
 if __name__ == "__main__":
     app = App()
