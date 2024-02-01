@@ -66,12 +66,12 @@ class App(ctk.CTk):
         self.iterator = 0
         self.running = False
         self.hours, self.minutes, self.seconds = 0,0,0
+        self.progress_val = 0.0
 
         self.mock_data = [(random.randint(0, 100), random.randint(0, 100), random.randint(1, 10)) for _ in range(18)]
 
         self.iconbitmap("C:/Project/FinalProject/image/icons8-cell-50.ico")
         self.response = None
-        self.percentage_data = str("xx")
 
         self.title("Cells stain controller")
         self.geometry(f"{1200}x{640}")
@@ -114,7 +114,7 @@ class App(ctk.CTk):
         self.progress_bar_label.grid(row=0, column=0, padx=10, pady=(10, 10))
         self.progress_bar = ctk.CTkProgressBar(self.progress_bar_frame, progress_color="green", width=700)
         self.progress_bar.grid(row=0, column=1, columnspan=6, padx=10, pady=10, sticky="nsew")
-        self.percentage_label = ctk.CTkLabel(self.progress_bar_frame, text=f"{self.percentage_data} / 100%")
+        self.percentage_label = ctk.CTkLabel(self.progress_bar_frame, text=f"{self.progress_val * 100} / 100%")
         self.percentage_label.grid(row=0, column=8, sticky='e')
 
         #Monitoring frame
@@ -228,7 +228,7 @@ class App(ctk.CTk):
         file = open("C:/Project/FinalProject/MainPackage/mode_conf.json")
         data = json.load(file)
         mode_name = data['mode ' + str(mode_number)]['name']
-        self.Mode_data = pd.read_json("C:/Project/seniorProject/mainProgram/mode_conf.json")
+        self.Mode_data = pd.read_json("C:/Project/FinalProject/MainPackage/mode_conf.json")
         self.monitoring_data = pd.DataFrame({  'solution'  : self.Mode_data['mode ' + str(mode_number)]['solution'],
                                                 'time'     : self.Mode_data['mode ' + str(mode_number)]['time'],
                                                 'cycle'    : self.Mode_data['mode ' + str(mode_number)]['cycle']})
@@ -246,7 +246,7 @@ class App(ctk.CTk):
                     self.response = self.ser.readline().decode('utf-8').strip()
                     print(f"response : {self.response}")
                     if self.response == "request" and self.iterator != len(self.mock_data):
-                        print(self.iterator)
+                        # print(self.iterator)
                         data_pack.update({"x":self.mock_data[self.iterator][0], "y":self.mock_data[self.iterator][1], "t":self.mock_data[self.iterator][2]})
                         self.send_package("position", data_list=data_pack)
                         time.sleep(0.5)
@@ -270,6 +270,15 @@ class App(ctk.CTk):
         self.Next_solution_data.configure(text = self.monitoring_data['solution'][self.iterator +1])
         self.Left_rack_data.configure(text = str(len(self.monitoring_data['solution']) - self.iterator) + ' rack(s)')
         self.table.select_row(self.iterator+1)
+        # self.progress_percent = (len(self.monitoring_data['solution']) - self.iterator) / len(self.monitoring_data['solution'])
+        self.updateProgressBar()
+        print(self.progress_val)
+
+    def updateProgressBar(self):
+        self.progress_val = 1 - ((len(self.monitoring_data['solution']) - self.iterator) / len(self.monitoring_data['solution']))
+        self.progress_val = round(self.progress_val, 2)
+        self.progress_bar.set(self.progress_val)
+        self.percentage_label.configure(text=f"{int(self.progress_val * 100)} / 100%")
 
     #timer function
     def start_timer(self):
