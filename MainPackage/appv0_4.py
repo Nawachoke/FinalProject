@@ -11,6 +11,7 @@ import threading
 import time
 import os
 from PIL import Image
+# from manualw import ManualWindow
 # from SerialComms import Comms
 import random
 import serial
@@ -18,6 +19,33 @@ import serial
 ctk.set_appearance_mode("System") # Modes: "System" (standard), "Dark", "Light"
 ctk.set_default_color_theme("dark-blue") # Themes: "blue" (standard), "green", "dark-blue"
 
+class ManualWindow(ctk.CTkToplevel):
+    def __init__(self):
+        super().__init__()
+
+        # self.focus = focus
+        # self.message = message
+        self.init_ui()
+    
+    def init_ui(self):
+        self.geometry("600x300")
+        self.title('mode settings')
+        self.resizable(False, False)
+        self.MainFrame = ctk.CTkFrame(self, fg_color="transparent")
+        self.MainFrame.pack(pady=10, padx=10)
+        self.label = ctk.CTkLabel(self, text="Please select mode configuration.")
+        self.label.pack(side='top',pady=10, padx=10)
+
+        self.new_protocol_button = ctk.CTkButton(self.MainFrame, text="New")
+        self.new_protocol_button.pack(side='right', padx=10, pady=10)
+        self.protocol_adjust_button = ctk.CTkButton(self.MainFrame, text="Adjust")
+        self.protocol_adjust_button.pack(side='left', padx=10, pady=10)
+
+    def adjust_event(self):
+        pass
+    
+    def new_prot_event(self):
+        pass
 class askyesno(ctk.CTkToplevel):
     def __init__(self, message, focus=True):
         super().__init__()
@@ -88,7 +116,7 @@ class App(ctk.CTk):
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20,10))
         self.mode_optionmenu_label = ctk.CTkLabel(self.sidebar_frame, text="Staining mode", anchor="w")
         self.mode_optionmenu_label.grid(row=1, column=0, padx=20, pady=10)
-        self.mode_optionmenu = ctk.CTkOptionMenu(self.sidebar_frame, values=["IHC", "H&E"], command=self.mode_event)
+        self.mode_optionmenu = ctk.CTkOptionMenu(self.sidebar_frame, values=["IHC", "H&E", "settings"], command=self.mode_event)
         self.mode_optionmenu.grid(row=2, column=0, padx=20, pady=10)
         self.image_button = ctk.CTkButton(self.sidebar_frame, text="IMAGE", command=self.image_event, font=ctk.CTkFont(size=16))
         self.image_button.grid(row=3, column=0, padx=20, pady=10)
@@ -203,23 +231,32 @@ class App(ctk.CTk):
         if mode == "H&E":
             message = "Start with H & E mode"
             mode_number = 1
+            self.Confirm(message, mode_number)
         elif mode == "IHC":
             message = "Start with IHC mode"
             mode_number = 2
+            self.Confirm(message, mode_number)
+        elif mode == "settings":
+            message = "Config Protocol"
+            mode_config = ManualWindow()
         else:
             pass
 
+    def Confirm(self, message, mode_number=None):
         Mode_confirm = askyesno(message=message, focus=True)
         answer = Mode_confirm.get_result()
 
-        if answer == True:
+        if answer == True and mode_number >= 1:
             self.mode_name = self.Read_Data(mode_number)
             self.Protocol_data.configure(text=self.mode_name)
             self.iterator = 0
             self.DestroyTable()
             self.show_table()
             self.Status_update()
-            
+        
+        # elif answer == True:
+        #     mod
+
     def DestroyTable(self):
         for widget in self.Table_frame.winfo_children() :
             widget.destroy()

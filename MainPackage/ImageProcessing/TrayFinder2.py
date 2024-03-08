@@ -17,8 +17,8 @@ class TrayFinder:
     def HSV_threshold(self):
         self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
         self.blur = cv2.GaussianBlur(self.gray, (3,3), 0)
-        lower = np.array([0,   137,  163])
-        upper = np.array([255,  228, 239])
+        lower = np.array([61,   105,  202])
+        upper = np.array([108,  255, 255])
         self.mask = cv2.inRange(self.blur, lower, upper)
         return self.mask
 
@@ -27,7 +27,7 @@ class TrayFinder:
         kernel = np.ones((3,3), np.uint8)
         # self.morph = cv2.erode(masked, kernel, iterations=1)
         # self.morph = cv2.morphologyEx(masked, cv2.MORPH_OPEN, kernel, iterations=1)
-        ctrs, hier = cv2.findContours(self.mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        ctrs, hier = cv2.findContours(masked, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         self.contoured_image = cv2.drawContours(self.image, ctrs, -1, (0, 0, 255), 2)
 
         return ctrs
@@ -49,40 +49,67 @@ class TrayFinder:
             area = cv2.contourArea(cnt)
             midpoint.append([x1, y1])
             areas.append(area)
-            # print(f'Area of contour {i+1}:', area)
-        areas = np.array(areas)
-        midpoint = np.array(midpoint)
-        # print(areas)
-        # print(midpoint)
-        # print(np.mean(areas), np.mean(areas) + np.mean(areas)*0.05)
-        # aerr = []
-        # for i in range(len(areas)):
-        #     if areas[i] < (np.mean(areas) + (np.mean(areas)*0.2)):
-        #         print(i)
-        #         aerr.append(i)
-        # filter_areas = [value for index, value in enumerate(areas) if index not in aerr]
-        # print(filter_areas)
-        # filter_midpoint = [value for index, value in enumerate(midpoint) if index not in aerr]
-        # print(filter_midpoint)
-        # midpoint.sort(axis=0)
-        for i in range(len(midpoint)):
-                cv2.putText(self.contoured_image, str(i+1),(midpoint[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                cv2.circle(self.contoured_image, (midpoint[i]), radius=2, color=(255, 255, 255), thickness=-1)
-    #optional function
+
+        merr, aerr = self.point_filtering(areas, midpoint)
+
+        for i in range(len(merr)):
+            cv2.putText(self.contoured_image, str(i+1), (merr[i] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+            cv2.circle(self.contoured_image, (merr[i]), radius=2, color=(255, 255, 255), thickness=-1)
+            # cv2.putText(self.contoured_image, str(merr[i]), (merr[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 2)
+
     def Copy_image(self):
         pass
 
     def Show_real_image(self):
         pass
 
+    def point_filtering(self, areas, midpoint):
+        areas = np.array(areas)
+        midpoint = np.array(midpoint)
+        # print(areas)
+        # print(midpoint)
+        # print('area filtering')
+        AreaMean = np.mean(areas[areas!=0])
+        SF = np.mean(areas[areas!=0])*0.15 #Safety Factor
+        # print(AreaMean, AreaMean+SF, AreaMean-SF)
+        aerr, merr = [], []
+        for i in range(len(areas)):
+            if areas[i] < (AreaMean + SF) and areas[i] > (AreaMean - SF):
+                # print(i, areas[i], midpoint[i])
+                aerr.append(i)
+                merr.append(midpoint[i])
+            # elif areas[i] < (np.mean(areas) - (np.mean(areas)*(0.2))):
+            #     aerr.append(i)
+            # elif areas[i] == 0:
+            #     aerr.append(i)
+        # filtered_areas = [value for index, value in enumerate(areas) if index not in aerr]
+        # print('filtered area errors',filtered_areas)
+        # filtered_midpoint = [value for index, value in enumerate(midpoint) if index not in aerr]
+        # print(len(filtered_midpoint))
+        for point in merr:
+            print(point)
+        merr = self.sort_point(merr)
+
+        return merr, aerr
+
+    def sort_point(self, points):
+        sum_value = [sum(point) for point in points]
+        sorted_value = [val for _, val in sorted(zip(sum_value, points), reverse=True)]
+        # for i in range(len(sorted_value)):
+        #     print(points[i], sum_value[i], sorted_value[i], i+1)
+        return sorted_value
+            
+
     def ShowImage(self, window_name, image):
         plt.title(window_name)
         plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-
         plt.show()
 
     def Get_Binary(self):
         return self.morph
+    
+    def Save_Image(self, file_name, image):
+        cv2.imwrite(file_name, image)
 
     # def show(self):
     #     print(self.file_path)
@@ -95,12 +122,20 @@ if __name__ == '__main__':
     # Find.FindMidpoint()
     # Find.ShowImage('midpoints', Find.contoured_image)
     # Find.ShowImage('blur', Find.morph)
-    paths = glob.glob("C:/Project/FinalProject/MainPackage/ImageProcessing/Images/*.png")
+    paths = glob.glob("C:/Project/FinalProject/MainPackage/ImageProcessing/images/*.png")
     count = 0
-    for file_path in paths[:12]:
-        count += 1
-        tray_finder = TrayFinder(file_path)
-        tray_finder.FindMidpoint()
-        tray_finder.ShowImage(f'midpoint{count}', tray_finder.contoured_image)
-        tray_finder.ShowImage(f'gray{count}', tray_finder.morph)
-
+    # Test1 = TrayFinder(paths[4])
+    # mid = Test1.FindMidpoint()
+    # for file_path in paths:
+    #     count += 1
+    #     tray_finder = TrayFinder(file_path)
+    #     tray_finder.FindMidpoint()
+    #     tray_finder.ShowImage(f'midpoint{count}', tray_finder.contoured_image)
+        # tray_finder.ShowImage(f'gray{count}', tray_finder.morph)
+        # tray_finder.Save_Image(f'result{count}.png', tray_finder.contoured_image)
+    
+    test1 = TrayFinder(paths[0])
+    test1.FindMidpoint()
+    test1.ShowImage('test1', test1.contoured_image)
+    # test1.Save_Image('resultX.png', test1.contoured_image)
+    
