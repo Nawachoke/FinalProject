@@ -1,12 +1,14 @@
 {
     "cSpell.words": [
         "aerr",
+        "Calib",
         "columnspan",
         "Comms",
         "costomtkinter",
         "ctrd",
         "ctrs",
         "customtkinter",
+        "edgecolors",
         "Findpeaks",
         "hier",
         "hsplit",
@@ -25,6 +27,7 @@
         "rowspan",
         "sumall",
         "Sumval",
+        "Undist",
         "undistort",
         "vsplit",
         "xticks",

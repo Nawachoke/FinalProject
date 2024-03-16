@@ -32,13 +32,13 @@ class TrayFinder:
         dst = dst[y:y+h, x:x+w]
         cv2.imwrite('caliResult1.png', dst)
 
-        mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix, dist, None, newCameraMatrix, (w,h), 5)
-        dst = cv2.remap(image, mapx, mapy, cv2.INTER_LINEAR)
+        # mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix, dist, None, newCameraMatrix, (w,h), 5)
+        # dst = cv2.remap(image, mapx, mapy, cv2.INTER_LINEAR)
 
-        # crop the image
-        x, y, w, h = roi
-        dst = dst[y:y+h, x:x+w]
-        cv2.imwrite('caliResult2.png', dst)
+        # # crop the image
+        # x, y, w, h = roi
+        # dst = dst[y:y+h, x:x+w]
+        # cv2.imwrite('caliResult2.png', dst)
 
     #Image processing
     def HSV_threshold(self):

@@ -66,7 +66,7 @@ class askyesno(ctk.CTkToplevel):
         button_frame = ctk.CTkFrame(self, fg_color="transparent")
         button_frame.pack(pady=10)
 
-        self.warn_image = ctk.CTkImage(Image.open("C:/Project/FinalProject/image/warning-sign.png"), size=(50,50))
+        self.warn_image = ctk.CTkImage(Image.open("/image/warning-sign.png"), size=(50,50))
         warn = ctk.CTkLabel(button_frame,image=self.warn_image, text="")
         warn.pack(side="top", padx=10, pady=10)
         yes_button = ctk.CTkButton(button_frame, text="Yes", command=lambda: self.button_click(True))
@@ -98,7 +98,7 @@ class App(ctk.CTk):
 
         self.mock_data = [(random.randint(0, 100), random.randint(0, 100), random.randint(1, 10)) for _ in range(18)]
 
-        self.iconbitmap("C:/Project/FinalProject/image/icons8-cell-50.ico")
+        self.iconbitmap("/image/icons8-cell-50.ico")
         self.response = None
 
         self.title("Cells stain controller")

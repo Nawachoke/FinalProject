@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import glob
+import pickle
 
 class TrayFinder:
     def __init__(self, file_path=None):
@@ -17,6 +19,31 @@ class TrayFinder:
         self.merr = None
     
     #Image processing
+    def Undistorted(self, image):
+        with open('MainPackage/ImageProcessing/CalibrationMatrices/cameraMatrix.pkl', 'rb') as f1:
+            cameraMatrix = pickle.load(f1)
+        
+        with open('MainPackage/ImageProcessing/CalibrationMatrices/dist.pkl', 'rb') as f2:
+            dist = pickle.load(f2)
+        
+        h, w = image.shape[:2]
+        newCameraMatrix, roi = cv2.getOptimalNewCameraMatrix(cameraMatrix, dist, (w,h), 1, (w,h))
+        #undistort
+        # dst = cv2.undistort(image, cameraMatrix, dist, None, newCameraMatrix)
+        #crop the image
+        # x, y, w, h = roi
+        # dst = dst[y:y+h, x:x+w]
+        # cv2.imwrite('caliResult1.png', dst)
+
+        mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix, dist, None, newCameraMatrix, (w,h), 5)
+        dst = cv2.remap(image, mapx, mapy, cv2.INTER_LINEAR)
+
+        # crop the image
+        x, y, w, h = roi
+        dst = dst[y:y+h, x:x+w]
+        # cv2.imwrite('caliResult2.png', dst)
+        self.image = dst
+
     def HSV_threshold(self):
         self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
         self.blur = cv2.GaussianBlur(self.gray, (3,3), 0)
@@ -121,9 +148,20 @@ class TrayFinder:
         return frame
 
 if __name__ == '__main__':
-    tray_finder = TrayFinder()
-    tray_finder.ShowImage('raw image', image=tray_finder.image)
-    tray_finder.FindMidpoint()
-    tray_finder.ShowImage('midpoints', image=tray_finder.contoured_image)
-    tray_finder.Save_Image('result.png', image=tray_finder.contoured_image)
-    tray_finder.export_point(points= tray_finder.merr, name='points.csv')
+    paths = glob.glob("C:/Project/FinalProject/MainPackage/ImageProcessing/images/*.png")
+    count = 0
+    # testing = TrayFinder()
+    # testing.ShowImage('raw image', image=testing.image)
+    # testing.FindMidpoint()
+    # testing.ShowImage('midpoints', image=testing.contoured_image)
+    # testing.Save_Image('result.png', image=testing.contoured_image)
+    # testing.export_point(points= testing.merr, name='points.csv')
+    for file_path in paths:
+        count += 1
+        testing = TrayFinder(file_path)
+        testing.Undistorted(testing.image)
+        testing.FindMidpoint()
+        # testing.ShowImage(f'TestingResults/midpoint{count}', testing.contoured_image)
+        # testing.ShowImage(f'gray{count}', testing.morph)
+        testing.Save_Image(f'TestingResults/result{count}.png', testing.contoured_image)
+        testing.export_points(name = f'TestingResults/Mapping{count}.csv', points= testing.merr)
