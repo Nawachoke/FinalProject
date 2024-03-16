@@ -1,14 +1,14 @@
-import matplotlib.pyplot as plt
 import cv2
 import numpy as np
-import imutils
-import glob
+import matplotlib.pyplot as plt
 import pandas as pd
-import pickle
 
 class TrayFinder:
-    def __init__(self, file_path):
-        self.image = cv2.imread(str(file_path))
+    def __init__(self, file_path=None):
+        if file_path != None:
+            self.image = cv2.imread(str(file_path))
+        else:
+            self.image = self.capture_image()
         self.blur = None
         self.gray = None
         self.mask = None
@@ -16,30 +16,6 @@ class TrayFinder:
         self.contoured_image = None
         self.merr = None
     
-    def Undistorted(self, image):
-        with open('MainPackage/ImageProcessing/CalibrationMatrices/cameraMatrix.pkl', 'rb') as f1:
-            cameraMatrix = pickle.load(f1)
-        
-        with open('/MainPackage/ImageProcessing/CalibrationMatrices/dist.pkl', 'rb') as f2:
-            dist = pickle.load(f2)
-        
-        h, w = image.shape[:2]
-        newCameraMatrix, roi = cv2.getOptimalNewCameraMatrix(cameraMatrix, dist, (w,h), 1, (w,h))
-        #undistort
-        dst = cv2.undistort(image, cameraMatrix, dist, None, newCameraMatrix)
-        #crop the image
-        x, y, w, h = roi
-        dst = dst[y:y+h, x:x+w]
-        cv2.imwrite('caliResult1.png', dst)
-
-        mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix, dist, None, newCameraMatrix, (w,h), 5)
-        dst = cv2.remap(image, mapx, mapy, cv2.INTER_LINEAR)
-
-        # crop the image
-        x, y, w, h = roi
-        dst = dst[y:y+h, x:x+w]
-        cv2.imwrite('caliResult2.png', dst)
-
     #Image processing
     def HSV_threshold(self):
         self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
@@ -82,7 +58,7 @@ class TrayFinder:
         for i in range(len(self.merr)):
             cv2.putText(self.contoured_image, str(i+1), (self.merr[i] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
             cv2.circle(self.contoured_image, (self.merr[i]), radius=2, color=(255, 255, 255), thickness=-1)
-            # cv2.putText(self.contoured_image, str(merr[i]), (merr[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 2)
+            # cv2.putText(self.contoured_image, str(merr[i]), (merr[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 2
 
     def point_filtering(self, areas, midpoint):
         areas = np.array(areas)
@@ -99,17 +75,6 @@ class TrayFinder:
                 # print(i, areas[i], midpoint[i])
                 aerr.append(i)
                 merr.append(midpoint[i])
-            # elif areas[i] < (np.mean(areas) - (np.mean(areas)*(0.2))):
-            #     aerr.append(i)
-            # elif areas[i] == 0:
-            #     aerr.append(i)
-        # filtered_areas = [value for index, value in enumerate(areas) if index not in aerr]
-        # print('filtered area errors',filtered_areas)
-        # filtered_midpoint = [value for index, value in enumerate(midpoint) if index not in aerr]
-        # print(len(filtered_midpoint))
-        # for point in merr:
-        #     print(point)
-        # merr = self.sort_point(merr)
 
         return merr, aerr
 
@@ -120,6 +85,9 @@ class TrayFinder:
         #     print(points[i], sum_value[i], sorted_value[i], i+1)
         return sorted_value
             
+    def export_points(self, points, name):
+        data = pd.DataFrame(points)
+        data.to_csv(name, index=False)
 
     def ShowImage(self, window_name, image):
         plt.title(window_name)
@@ -132,32 +100,30 @@ class TrayFinder:
     def Save_Image(self, file_name, image):
         cv2.imwrite(file_name, image)
 
-    def export_points(self, points, name):
-        data = pd.DataFrame(points)
-        data.to_csv(name, index=False)
+    # def show(self):
+    #     print(self.file_path)
+    def capture_image(self):
+        cap = cv2.VideoCapture(0)
+
+        if not cap.isOpened():
+            print("Error: Unable to open camera.")
+            return
+        
+        ret, frame = cap.read()
+
+        if not ret:
+            print("Error Unable to capture frame")
+            cap.release()
+            return None
+        
+        cap.release()
+
+        return frame
 
 if __name__ == '__main__':
-    # Find = TrayFinder(file_path='C:/Project/FinalProject/Images/test_image_cam_jig2_0.png')
-    # mid_points = Find.FindMidpoint()
-    # mid_points.sort(axis=1)
-    # print(mid_points)
-    # Find.FindMidpoint()
-    # Find.ShowImage('midpoints', Find.contoured_image)
-    # Find.ShowImage('blur', Find.morph)
-    paths = glob.glob("C:/Project/FinalProject/MainPackage/ImageProcessing/images/*.png")
-    count = 0
-    # Test1 = TrayFinder(paths[4])
-    # mid = Test1.FindMidpoint()
-    for file_path in paths:
-        count += 1
-        tray_finder = TrayFinder(file_path)
-        tray_finder.FindMidpoint()
-        tray_finder.ShowImage(f'midpoint{count}', tray_finder.contoured_image)
-        # tray_finder.ShowImage(f'gray{count}', tray_finder.morph)
-        tray_finder.Save_Image(f'result{count}.png', tray_finder.contoured_image)
-        tray_finder.export_points(name = f'result{count}.csv', points= tray_finder.merr)
-    # test1 = TrayFinder(paths[0])
-    # test1.FindMidpoint()
-    # test1.ShowImage('test1', test1.contoured_image)
-    # test1.Save_Image('resultX.png', test1.contoured_image)
-    
+    tray_finder = TrayFinder()
+    tray_finder.ShowImage('raw image', image=tray_finder.image)
+    tray_finder.FindMidpoint()
+    tray_finder.ShowImage('midpoints', image=tray_finder.contoured_image)
+    tray_finder.Save_Image('result.png', image=tray_finder.contoured_image)
+    tray_finder.export_point(points= tray_finder.merr, name='points.csv')

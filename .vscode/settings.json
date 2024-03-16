@@ -14,7 +14,10 @@
         "imshow",
         "imutils",
         "imwrite",
+        "mapx",
+        "mapy",
         "merr",
+        "newcamera",
         "padx",
         "pady",
         "peakc",
@@ -22,6 +25,7 @@
         "rowspan",
         "sumall",
         "Sumval",
+        "undistort",
         "vsplit",
         "xticks",
         "yticks"
