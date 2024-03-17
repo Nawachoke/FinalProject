@@ -28,6 +28,7 @@ class TrayFinder:
         
         h, w = image.shape[:2]
         newCameraMatrix, roi = cv2.getOptimalNewCameraMatrix(cameraMatrix, dist, (w,h), 1, (w,h))
+
         #undistort
         # dst = cv2.undistort(image, cameraMatrix, dist, None, newCameraMatrix)
         #crop the image
@@ -81,6 +82,10 @@ class TrayFinder:
             areas.append(area)
 
         self.merr, aerr = self.point_filtering(areas, midpoint)
+        # print(self.merr)
+        # points=[]
+        # for point in self.merr:
+        #     points.append(point.tolist())
 
         for i in range(len(self.merr)):
             cv2.putText(self.contoured_image, str(i+1), (self.merr[i] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
@@ -105,12 +110,58 @@ class TrayFinder:
 
         return merr, aerr
 
-    def sort_point(self, points):
-        sum_value = [sum(point) for point in points]
-        sorted_value = [val for _, val in sorted(zip(sum_value, points), reverse=True)]
-        # for i in range(len(sorted_value)):
-        #     print(points[i], sum_value[i], sorted_value[i], i+1)
-        return sorted_value
+    def Find_Closest(points):
+
+        def Starter(points):
+            start_index = np.argmin(np.sum(points, axis=1))
+            points[0], points[start_index] = points[start_index], points[0]
+            return points
+        points = Starter(points)
+        points = np.array(points)
+
+        def IsIn(a_point, points):
+            a_point_tuple = tuple(a_point)
+            points_tuples = [tuple(p) for p in points]
+            in_list = a_point_tuple in points_tuples
+
+            return in_list
+
+        def Distance_Cal(index, points):
+            if index < 0 or index >= len(points):
+                raise ValueError("Index is out of bounds")
+            ref_point = points[index]
+            distances = np.linalg.norm(points - ref_point, axis=1)
+
+            return distances
+        
+        new_points = [points[0]]
+        index = 0
+        indexer = [0]
+        while len(new_points) != len(points):
+        
+            distances = Distance_Cal(index, points)
+            distances[index] = np.inf
+            closest_index = np.argmin(distances)
+            closest_point = points[closest_index]
+            if IsIn(closest_point, new_points) == False:
+                print(f"index {index} is not in new_points")
+                new_points.append(closest_point)
+                index = closest_index
+                indexer.append(index)
+                print(indexer)
+            elif IsIn(closest_point, new_points) == True:
+                print(f"index {index} is in new_points")
+
+                for i in indexer:
+                    distances[i] = np.inf
+                closest_index = np.argmin(distances)
+                print(closest_index, closest_point)
+                closest_point = points[closest_index]
+                new_points.append(closest_point)
+                print(distances)
+                index = closest_index
+                indexer.append(index)
+        return new_points
             
     def export_points(self, points, name):
         data = pd.DataFrame(points)
@@ -127,8 +178,6 @@ class TrayFinder:
     def Save_Image(self, file_name, image):
         cv2.imwrite(file_name, image)
 
-    # def show(self):
-    #     print(self.file_path)
     def capture_image(self):
         cap = cv2.VideoCapture(0)
 
@@ -150,18 +199,23 @@ class TrayFinder:
 if __name__ == '__main__':
     paths = glob.glob("C:/Project/FinalProject/MainPackage/ImageProcessing/images/*.png")
     count = 0
-    # testing = TrayFinder()
+    testing = TrayFinder(paths[0])
     # testing.ShowImage('raw image', image=testing.image)
-    # testing.FindMidpoint()
+    testing.FindMidpoint()
     # testing.ShowImage('midpoints', image=testing.contoured_image)
-    # testing.Save_Image('result.png', image=testing.contoured_image)
+    testing.Save_Image('result.png', image=testing.contoured_image)
+    print(type(testing.merr))
+    points= []
+    for i in range(len(testing.merr)):
+        # print(type(testing.merr[i].tolist()))
+        points.append(testing.merr[i].tolist())
     # testing.export_point(points= testing.merr, name='points.csv')
-    for file_path in paths:
-        count += 1
-        testing = TrayFinder(file_path)
-        testing.Undistorted(testing.image)
-        testing.FindMidpoint()
-        # testing.ShowImage(f'TestingResults/midpoint{count}', testing.contoured_image)
-        # testing.ShowImage(f'gray{count}', testing.morph)
-        testing.Save_Image(f'TestingResults/result{count}.png', testing.contoured_image)
-        testing.export_points(name = f'TestingResults/Mapping{count}.csv', points= testing.merr)
+    # for file_path in paths:
+    #     count += 1
+    #     testing = TrayFinder(file_path)
+    #     testing.Undistorted(testing.image)
+    #     testing.FindMidpoint()
+    #     # testing.ShowImage(f'TestingResults/midpoint{count}', testing.contoured_image)
+    #     # testing.ShowImage(f'gray{count}', testing.morph)
+    #     testing.Save_Image(f'TestingResults/result{count}.png', testing.contoured_image)
+    #     testing.export_points(name = f'TestingResults/Mapping{count}.csv', points= testing.merr)
