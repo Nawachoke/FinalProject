@@ -84,12 +84,15 @@ class TrayFinder:
         self.merr, aerr = self.point_filtering(areas, midpoint)
         # print(self.merr)
         # points=[]
-        # for point in self.merr:
-        #     points.append(point.tolist())
+        # for 
+        points = self.Find_Closest(self.merr)
+
+        for i in range(len(points) -1 ):
+            cv2.line(self.contoured_image, tuple(points[i]), tuple(points[i+1]), (0,0,0), thickness=2)
 
         for i in range(len(self.merr)):
-            cv2.putText(self.contoured_image, str(i+1), (self.merr[i] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-            cv2.circle(self.contoured_image, (self.merr[i]), radius=2, color=(255, 255, 255), thickness=-1)
+            cv2.putText(self.contoured_image, str(i+1), (points[i] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+            cv2.circle(self.contoured_image, (points[i]), radius=2, color=(255, 255, 255), thickness=-1)
             # cv2.putText(self.contoured_image, str(merr[i]), (merr[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 2
 
     def point_filtering(self, areas, midpoint):
@@ -110,7 +113,7 @@ class TrayFinder:
 
         return merr, aerr
 
-    def Find_Closest(points):
+    def Find_Closest(self, points):
 
         def Starter(points):
             start_index = np.argmin(np.sum(points, axis=1))
@@ -197,25 +200,27 @@ class TrayFinder:
         return frame
 
 if __name__ == '__main__':
-    paths = glob.glob("C:/Project/FinalProject/MainPackage/ImageProcessing/images/*.png")
+    paths = glob.glob("MainPackage\ImageProcessing\images\*.png")
     count = 0
-    testing = TrayFinder(paths[0])
-    # testing.ShowImage('raw image', image=testing.image)
-    testing.FindMidpoint()
-    # testing.ShowImage('midpoints', image=testing.contoured_image)
-    testing.Save_Image('result.png', image=testing.contoured_image)
-    print(type(testing.merr))
-    points= []
-    for i in range(len(testing.merr)):
-        # print(type(testing.merr[i].tolist()))
-        points.append(testing.merr[i].tolist())
+    # testing = TrayFinder(paths[0])
+    # # testing.ShowImage('raw image', image=testing.image)
+    # testing.FindMidpoint()
+    # # testing.ShowImage('midpoints', image=testing.contoured_image)
+    # testing.Save_Image('result.png', image=testing.contoured_image)
+    # print(type(testing.merr))
+    # points= []
+    # for i in range(len(testing.merr)):
+    #     # print(type(testing.merr[i].tolist()))
+    #     points.append(testing.merr[i].tolist())
+    # # print(points.shape)
+    # new_points = testing.Find_Closest(points)
     # testing.export_point(points= testing.merr, name='points.csv')
-    # for file_path in paths:
-    #     count += 1
-    #     testing = TrayFinder(file_path)
-    #     testing.Undistorted(testing.image)
-    #     testing.FindMidpoint()
-    #     # testing.ShowImage(f'TestingResults/midpoint{count}', testing.contoured_image)
-    #     # testing.ShowImage(f'gray{count}', testing.morph)
-    #     testing.Save_Image(f'TestingResults/result{count}.png', testing.contoured_image)
-    #     testing.export_points(name = f'TestingResults/Mapping{count}.csv', points= testing.merr)
+    for file_path in paths:
+        count += 1
+        testing = TrayFinder(file_path)
+        testing.Undistorted(testing.image)
+        testing.FindMidpoint()
+        # testing.ShowImage(f'TestingResults/midpoint{count}', testing.contoured_image)
+        # testing.ShowImage(f'gray{count}', testing.morph)
+        testing.Save_Image(f'TestingResults/result{count}.png', testing.contoured_image)
+        testing.export_points(name = f'TestingResults/Mapping{count}.csv', points= testing.merr)

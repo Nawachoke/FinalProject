@@ -30,6 +30,7 @@ def Find_Closest(points):
         return points
     points = Starter(points)
     points = np.array(points)
+    # print(points.shape)
 
     def IsIn(a_point, points):
         a_point_tuple = tuple(a_point)
