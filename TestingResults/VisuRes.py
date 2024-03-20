@@ -7,13 +7,13 @@ mapping_frames = []
 undist_frames =[]
 points_frames = []
 
-for mapping in glob.glob('C:/Project/FinalProject/TestingResults/Mapping?.csv'):
+for mapping in glob.glob('TestingResults/Mapping?.csv'):
     df = pd.read_csv(mapping)
     mapping_frames.append(df)
-for undist in glob.glob('C:/Project/FinalProject/TestingResults/Undist?.csv'):
+for undist in glob.glob('TestingResults/Undist?.csv'):
     df = pd.read_csv(undist)
     undist_frames.append(df)
-for points in glob.glob('C:/Project/FinalProject/TestingResults/RawPoints?.csv'):
+for points in glob.glob('TestingResults/RawPoints?.csv'):
     df = pd.read_csv(points)
     points_frames.append(df)
 
