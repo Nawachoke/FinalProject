@@ -217,7 +217,7 @@ class TrayFinder:
 if __name__ == '__main__':
     paths = glob.glob("MainPackage\ImageProcessing\images\*.png")
     count = 0
-    testing = TrayFinder(paths[1])
+    testing = TrayFinder(paths[2])
     testing.Undistorted(testing.image)
     # testing.ShowImage('raw image', image=testing.image)
     testing.FindMidpoint()
@@ -225,9 +225,9 @@ if __name__ == '__main__':
     testing.Save_Image('result.png', image=testing.contoured_image)
     print(type(testing.merr))
     points= []
-    for i in range(len(testing.merr)):
+    # for i in range(len(testing.merr)):
         # print(type(testing.merr[i].tolist()))
-        points.append(testing.merr[i].tolist())
+        # points.append(testing.merr[i].tolist())
     # print(points.shape)
     new_points = testing.Find_Closest(points)
     testing.export_points(points= testing.points, name='points.csv')
