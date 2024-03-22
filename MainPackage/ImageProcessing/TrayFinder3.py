@@ -5,11 +5,14 @@ import pandas as pd
 import glob
 import json
 import pickle
+import time 
 
 class TrayFinder:
     def __init__(self, file_path=None):
         if file_path != None:
             self.image = cv2.imread(str(file_path))
+        elif file_path == "Vid":
+            self.image = self.captureVideo()
         else:
             self.image = self.capture_image()
         self.blur = None
@@ -31,7 +34,7 @@ class TrayFinder:
         newCameraMatrix, roi = cv2.getOptimalNewCameraMatrix(cameraMatrix, dist, (w,h), 1, (w,h))
 
         # #undistort
-        # dst = cv2.undistort(image, cameraMatrix, dist, None, newCameraMatrix)
+        dst = cv2.undistort(image, cameraMatrix, dist, None, newCameraMatrix)
         # # crop the image
         # x, y, w, h = roi
         # dst = dst[y:y+h, x:x+w]
@@ -39,12 +42,12 @@ class TrayFinder:
 
 
         #mapping
-        mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix, dist, None, newCameraMatrix, (w,h), 5)
-        dst = cv2.remap(image, mapx, mapy, cv2.INTER_LINEAR)
+        # mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix, dist, None, newCameraMatrix, (w,h), 5)
+        # dst = cv2.remap(image, mapx, mapy, cv2.INTER_LINEAR)
 
         # crop the image
-        x, y, w, h = roi
-        dst = dst[y:y+h, x:x+w]
+        # x, y, w, h = roi
+        # dst = dst[y:y+h, x:x+w]
         # cv2.imwrite('caliResult2.png', dst)
         self.image = dst
 
@@ -108,10 +111,10 @@ class TrayFinder:
         # print('area filtering')
         AreaMean = np.mean(areas[areas!=0])
         SF = np.mean(areas[areas!=0])*0.15 #Safety Factor
-        print(AreaMean, AreaMean+SF, AreaMean-SF, len(areas))
+        # print(AreaMean, AreaMean+SF, AreaMean-SF, len(areas))
         aerr, merr = [], []
         for i in range(len(areas)):
-            print(areas[i], i)
+            # print(areas[i], i)
             if areas[i] < (AreaMean + SF) and areas[i] > (AreaMean - SF):
                 # print(i, areas[i], midpoint[i])
                 aerr.append(i)
@@ -175,6 +178,7 @@ class TrayFinder:
     def export_points(self, points, name):
         data = pd.DataFrame(points)
         data.to_csv(name, index=False)
+        print("points exported")
 
     def ShowImage(self, window_name, image):
         plt.title(window_name)
@@ -186,9 +190,11 @@ class TrayFinder:
     
     def Save_Image(self, file_name, image):
         cv2.imwrite(file_name, image)
+        print("Image saved")
 
     def capture_image(self):
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(1)
+        time.sleep(0.2)
 
         if not cap.isOpened():
             print("Error: Unable to open camera.")
@@ -213,32 +219,30 @@ class TrayFinder:
         with open(filename, 'w') as file:
             json.dump(data, file,)
 
+    def captureVideo(self):
+        cap = cv2.VideoCapture(1)
+
+        if not cap.isOpened():
+            print("Error: Unable to open camera.")
+            return
+        
+        while(True):
+            ret, frame = cap.read()
+            cv2.imshow("frame", frame)
+            if cv2.waitKey(1) and 0xFF == ord('q'):
+                break
+        cap.release()
+        cv2.destroyAllWindows()
+
 
 if __name__ == '__main__':
-    paths = glob.glob("MainPackage\ImageProcessing\images\*.png")
-    count = 0
-    testing = TrayFinder(paths[1])
-    testing.Undistorted(testing.image)
-    # testing.ShowImage('raw image', image=testing.image)
-    testing.FindMidpoint()
-    # testing.ShowImage('midpoints', image=testing.contoured_image)
-    testing.Save_Image('result.png', image=testing.contoured_image)
-    print(type(testing.merr))
-    points= []
-    for i in range(len(testing.merr)):
-        # print(type(testing.merr[i].tolist()))
-        points.append(testing.merr[i].tolist())
-    # print(points.shape)
-    new_points = testing.Find_Closest(points)
-    testing.export_points(points= testing.points, name='points.csv')
-    # for file_path in paths:
-    #     count += 1
-    #     testing = TrayFinder(file_path)
-    #     testing.Undistorted(testing.image)
-    #     testing.FindMidpoint()
-    #     # testing.ShowImage(f'TestingResults/midpoint{count}', testing.contoured_image)
-    #     # testing.ShowImage(f'gray{count}', testing.morph)
-    #     # testing.Save_Image(f'TestingResults/result{co}')
-    #     testing.Save_Image(f'TestingResults/result{count}.png', testing.contoured_image)
-    #     testing.export_points(name = f'TestingResults/Mapping{count}.csv', points= testing.points)
-    # print(testing.points)
+    TestCam = TrayFinder()
+    TestCam.ShowImage('raw image', image=TestCam.image)
+    TestCam.Save_Image('raw_image.png', image=TestCam.image)
+    TestCam.Undistorted(TestCam.image)
+    TestCam.ShowImage('Undistroted image', TestCam.image)
+    TestCam.Save_Image('Undistroted_image.png', TestCam.image)
+    TestCam.FindMidpoint()
+    TestCam.ShowImage('result',TestCam.image)
+    TestCam.export_points(points=TestCam.points, name='result_undist.csv')
+    TestCam.Save_Image("Final_result.png", TestCam.contoured_image)
