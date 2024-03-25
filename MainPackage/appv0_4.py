@@ -3,7 +3,8 @@ from typing import Optional, Tuple, Union
 import customtkinter as ctk
 import sys
 import json
-from ImageProcessing import TrayFinder2 as TF
+# from ImageProcessing import TrayFinder3
+import ImageProcessing.TrayFinder3 as TF
 import pandas as pd
 import numpy as np
 from CTkTable import *
@@ -66,7 +67,7 @@ class askyesno(ctk.CTkToplevel):
         button_frame = ctk.CTkFrame(self, fg_color="transparent")
         button_frame.pack(pady=10)
 
-        self.warn_image = ctk.CTkImage(Image.open("/image/warning-sign.png"), size=(50,50))
+        self.warn_image = ctk.CTkImage(Image.open("MainPackage\image\warning-sign.png"), size=(50,50))
         warn = ctk.CTkLabel(button_frame,image=self.warn_image, text="")
         warn.pack(side="top", padx=10, pady=10)
         yes_button = ctk.CTkButton(button_frame, text="Yes", command=lambda: self.button_click(True))
@@ -90,15 +91,16 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         # self.data = [(random.randint(0,100), random.randint(0,100), random.randint(1,10)) for _ in range(18)]
+        
         self.ser = serial.Serial('COM3', 9600)
         self.iterator = 0
         self.running = False
         self.hours, self.minutes, self.seconds = 0,0,0
         self.progress_val = 0.0
+        
+        self.data_points = [(random.randint(0, 100), random.randint(0, 100), random.randint(1, 10)) for _ in range(18)]
 
-        self.mock_data = [(random.randint(0, 100), random.randint(0, 100), random.randint(1, 10)) for _ in range(18)]
-
-        self.iconbitmap("/image/icons8-cell-50.ico")
+        self.iconbitmap("MainPackage\image\icons8-cell-50.ico")
         self.response = None
 
         self.title("Cells stain controller")
@@ -192,7 +194,11 @@ class App(ctk.CTk):
         ctk.set_appearance_mode(new_appearance_mode)
 
     def image_event(self):
-        pass
+        self.data = TF.TrayFinder("raw_image.png")
+        self.data.Undistorted(self.data.image)
+        self.data_points = self.data.FindMidpoint()
+        self.data.ShowImage('result', self.data.contoured_image)
+        print(type(self.data_points[0][0]))
     
     def start_event(self):
         Start_confirm = askyesno(message='Start machine?', focus=True)
@@ -282,9 +288,9 @@ class App(ctk.CTk):
                 if self.ser.in_waiting > 0:
                     self.response = self.ser.readline().decode('utf-8').strip()
                     print(f"response : {self.response}")
-                    if self.response == "request" and self.iterator != len(self.mock_data):
+                    if self.response == "request" and self.iterator != len(self.data_points):
                         # print(self.iterator)
-                        data_pack.update({"x":self.mock_data[self.iterator][0], "y":self.mock_data[self.iterator][1], "t":self.mock_data[self.iterator][2]})
+                        data_pack.update({"x":self.data_points[self.iterator][0], "y":self.data_points[self.iterator][1], "t":self.monitoring_data['time'][self.iterator]})
                         self.send_package("position", data_list=data_pack)
                         time.sleep(0.5)
                         self.iterator += 1
