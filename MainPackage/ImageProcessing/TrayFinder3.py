@@ -222,7 +222,7 @@ class TrayFinder:
                 break
         cap.release()
         cv2.destroyAllWindows()
-# if __name__ == '__main__':
+if __name__ == '__main__':
 
     # TestCam = TrayFinder("raw_image.png")
     # # TestCam.ShowImage('raw image', image=TestCam.image)
@@ -234,9 +234,10 @@ class TrayFinder:
     # TestCam.export_points(points=TestCam.points, name='result_undist.csv')
     # TestCam.Save_Image("Final_result.png", TestCam.contoured_image)
 
-    # TestDist = TrayFinder("raw_image.png")
-    # TestDist.ShowImage('raw image', image=TestDist.image)
-    # TestDist.FindMidpoint()
-    # TestDist.ShowImage('result', TestDist.image)
-    # TestDist.export_points(points=TestDist.points, name='result.csv')
-    # TestDist.Save_Image("Final_result.png", TestDist.contoured_image)
+    TestDist = TrayFinder("raw_image.png")
+    TestDist.ShowImage('raw image', image=TestDist.image)
+    TestDist.FindMidpoint()
+    TestDist.Save_Image("bin_image.png", TestDist.mask)
+    TestDist.ShowImage('result', TestDist.image)
+    TestDist.export_points(points=TestDist.points, name='result.csv')
+    TestDist.Save_Image("Final_result.png", TestDist.contoured_image)

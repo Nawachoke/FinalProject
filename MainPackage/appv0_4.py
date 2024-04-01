@@ -275,6 +275,9 @@ class App(ctk.CTk):
         self.monitoring_data = pd.DataFrame({  'solution'  : self.Mode_data['mode ' + str(mode_number)]['solution'],
                                                 'time'     : self.Mode_data['mode ' + str(mode_number)]['time'],
                                                 'cycle'    : self.Mode_data['mode ' + str(mode_number)]['cycle']})
+        print(len(self.monitoring_data['time']))
+        print(len(self.monitoring_data['solution']))
+        print(len(self.monitoring_data['cycle']))
         return mode_name
 
     def DataOverwrite(self):
@@ -283,29 +286,36 @@ class App(ctk.CTk):
     #communication thread
     def receive_response(self):
         data_pack = {"x": 0, "y": 0, "t": 0}
-        try:
-            while True:
+        # try:
+        while True:
                 if self.ser.in_waiting > 0:
                     self.response = self.ser.readline().decode('utf-8').strip()
                     print(f"response : {self.response}")
                     if self.response == "request" and self.iterator != len(self.data_points):
-                        # print(self.iterator)
-                        data_pack.update({"x":self.data_points[self.iterator][0], "y":self.data_points[self.iterator][1], "t":self.monitoring_data['time'][self.iterator]})
+                        data_pack.update({"x": self.data_points[self.iterator][0], 
+                                          "y": self.data_points[self.iterator][1], 
+                                        #   "t": self.monitoring_data['time'][self.iterator]})
+                                        "t":len(self.monitoring_data['time'])})
                         self.send_package("position", data_list=data_pack)
-                        time.sleep(0.5)
+                        time.sleep(0.5)  # careful with sleep, it could delay the loop
                         self.iterator += 1
-                        self.Status_update()
-        except Exception as e:
-            print(f"Error in receive_response: {e}")
-        except KeyboardInterrupt:
-            pass
+                        # self.Status_update()
+        # except Exception as e:
+        #     print(f"Error in receive_response: {e}")
+        # except KeyboardInterrupt:
+        #     pass
+
 
     def send_package(self, command, data_list=None):
+        if data_list:
+            # Convert all NumPy integers in the data_list to Python integers
+            data_list = {k: v.item() if isinstance(v, np.integer) else v for k, v in data_list.items()}
+
         package = {"command": command, "data": data_list}
         json_data = json.dumps(package)
         self.ser.write((json_data + '\n').encode('ascii'))
         self.ser.flush()
-        print(f"Sent JSON package: {json_data}")
+        print(f"Sent JSON package: {json_data}", self.iterator)
 
     def Status_update(self):
         self.table.deselect_row(self.iterator)
