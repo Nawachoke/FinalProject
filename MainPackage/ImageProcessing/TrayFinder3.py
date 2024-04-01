@@ -111,12 +111,12 @@ class TrayFinder:
         # print('area filtering')
         AreaMean = np.mean(areas[areas!=0])
         SF = np.mean(areas[areas!=0])*0.15 #Safety Factor
-        # print(AreaMean, AreaMean+SF, AreaMean-SF, len(areas))
+        print(AreaMean, AreaMean+SF, AreaMean-SF, len(areas))
         aerr, merr = [], []
         for i in range(len(areas)):
             # print(areas[i], i)
             if areas[i] < (AreaMean + SF) and areas[i] > (AreaMean - SF):
-                # print(i, areas[i], midpoint[i])
+                print(i, areas[i], midpoint[i])
                 aerr.append(i)
                 merr.append(midpoint[i])
 
@@ -244,5 +244,5 @@ if __name__ == '__main__':
     TestCam.Save_Image('Undistroted_image.png', TestCam.image)
     TestCam.FindMidpoint()
     TestCam.ShowImage('result',TestCam.image)
-    TestCam.export_points(points=TestCam.points, name='result_undist.csv')
+    TestCam.export_points(points=TestCam.points, name='result.csv')
     TestCam.Save_Image("Final_result.png", TestCam.contoured_image)
