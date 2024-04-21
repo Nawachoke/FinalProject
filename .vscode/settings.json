@@ -30,7 +30,11 @@
         "Undist",
         "undistort",
         "vsplit",
+        "Xfactor",
+        "Xspace",
         "xticks",
+        "Yfactor",
+        "Yspace",
         "yticks"
     ]
 }

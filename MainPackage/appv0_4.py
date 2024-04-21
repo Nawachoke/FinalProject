@@ -92,7 +92,7 @@ class App(ctk.CTk):
         super().__init__()
         # self.data = [(random.randint(0,100), random.randint(0,100), random.randint(1,10)) for _ in range(18)]
         
-        self.ser = serial.Serial('COM2', 9600)
+        self.ser = serial.Serial('COM3', 9600)
         self.iterator = 0
         self.running = False
         self.hours, self.minutes, self.seconds = 0,0,0
