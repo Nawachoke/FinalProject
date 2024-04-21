@@ -67,7 +67,7 @@ class askyesno(ctk.CTkToplevel):
         button_frame = ctk.CTkFrame(self, fg_color="transparent")
         button_frame.pack(pady=10)
 
-        self.warn_image = ctk.CTkImage(Image.open("MainPackage\image\warning-sign.png"), size=(50,50))
+        self.warn_image = ctk.CTkImage(Image.open("FinalProject/MainPackage/image/warning-sign.png"), size=(50,50))
         warn = ctk.CTkLabel(button_frame,image=self.warn_image, text="")
         warn.pack(side="top", padx=10, pady=10)
         yes_button = ctk.CTkButton(button_frame, text="Yes", command=lambda: self.button_click(True))
@@ -92,7 +92,7 @@ class App(ctk.CTk):
         super().__init__()
         # self.data = [(random.randint(0,100), random.randint(0,100), random.randint(1,10)) for _ in range(18)]
         
-        self.ser = serial.Serial('COM3', 9600)
+        self.ser = serial.Serial('COM2', 9600)
         self.iterator = 0
         self.running = False
         self.hours, self.minutes, self.seconds = 0,0,0
@@ -100,7 +100,7 @@ class App(ctk.CTk):
         
         self.data_points = [(random.randint(0, 100), random.randint(0, 100), random.randint(1, 10)) for _ in range(18)]
 
-        self.iconbitmap("MainPackage\image\icons8-cell-50.ico")
+        self.iconbitmap("FinalProject/MainPackage/image/icons8-cell-50.ico")
         self.response = None
 
         self.title("Cells stain controller")
@@ -190,11 +190,26 @@ class App(ctk.CTk):
         new_scaling_float = int(new_scaling.replace("%", "")) / 100
         ctk.set_widget_scaling(new_scaling_float)
     
+    def Px2StepX(self, data):
+        m2s = 0.2 #mm/step
+        Xfactor = 356/257
+        Xspace = 0
+        converted_data = ((((640 - data) / Xfactor) / m2s) + Xspace)
+        return int(converted_data)
+
+    def Px2StepY(self, data):
+        m2s = 0.2 #mm/step
+        Yfactor = 362/265
+        Yspace = 20
+        converted_data = ((((640 - data) / Yfactor) / m2s) + Yspace)
+        return int(converted_data)
+
+    
     def change_appearance_mode_event(self, new_appearance_mode: str):
         ctk.set_appearance_mode(new_appearance_mode)
 
     def image_event(self):
-        self.data = TF.TrayFinder("raw_image.png")
+        self.data = TF.TrayFinder("FinalProject/raw_image.png")
         self.data.Undistorted(self.data.image)
         self.data_points = self.data.FindMidpoint()
         self.data.ShowImage('result', self.data.contoured_image)
@@ -208,6 +223,7 @@ class App(ctk.CTk):
             self.Run_time_data.configure(text = '00:00:00')
             self.start_timer()
             self.send_package(command="position", data_list=data_pack)
+            self.iterator = 0
 
     def stop_event(self):
         Stop_confirm = askyesno(message="Stop machine?", focus=True)
@@ -268,10 +284,10 @@ class App(ctk.CTk):
             widget.destroy()
     
     def Read_Data(self, mode_number):
-        file = open("C:/Project/FinalProject/MainPackage/mode_conf.json")
+        file = open("FinalProject/MainPackage/mode_conf.json")
         data = json.load(file)
         mode_name = data['mode ' + str(mode_number)]['name']
-        self.Mode_data = pd.read_json("C:/Project/FinalProject/MainPackage/mode_conf.json")
+        self.Mode_data = pd.read_json("FinalProject/MainPackage/mode_conf.json")
         self.monitoring_data = pd.DataFrame({  'solution'  : self.Mode_data['mode ' + str(mode_number)]['solution'],
                                                 'time'     : self.Mode_data['mode ' + str(mode_number)]['time'],
                                                 'cycle'    : self.Mode_data['mode ' + str(mode_number)]['cycle']})
@@ -292,14 +308,14 @@ class App(ctk.CTk):
                     self.response = self.ser.readline().decode('utf-8').strip()
                     print(f"response : {self.response}")
                     if self.response == "request" and self.iterator != len(self.data_points):
-                        data_pack.update({"x": self.data_points[self.iterator][0], 
-                                          "y": self.data_points[self.iterator][1], 
+                        data_pack.update({"x": self.Px2StepX(self.data_points[self.iterator][0]), 
+                                          "y": self.Px2StepY(self.data_points[self.iterator][1]), 
                                         #   "t": self.monitoring_data['time'][self.iterator]})
                                         "t":len(self.monitoring_data['time'])})
                         self.send_package("position", data_list=data_pack)
                         time.sleep(0.5)  # careful with sleep, it could delay the loop
                         self.iterator += 1
-                        # self.Status_update()
+                        self.Status_update()
         # except Exception as e:
         #     print(f"Error in receive_response: {e}")
         # except KeyboardInterrupt:
@@ -313,22 +329,25 @@ class App(ctk.CTk):
 
         package = {"command": command, "data": data_list}
         json_data = json.dumps(package)
-        self.ser.write((json_data + '\n').encode('ascii'))
+        self.ser.write((json_data + '/n').encode('ascii'))
         self.ser.flush()
         print(f"Sent JSON package: {json_data}", self.iterator)
 
     def Status_update(self):
-        self.table.deselect_row(self.iterator)
-        self.Current_solution_data.configure(text= self.monitoring_data['solution'][self.iterator])
-        self.Next_solution_data.configure(text = self.monitoring_data['solution'][self.iterator +1])
-        self.Left_rack_data.configure(text = str(len(self.monitoring_data['solution']) - self.iterator) + ' rack(s)')
-        self.table.select_row(self.iterator+1)
-        # self.progress_percent = (len(self.monitoring_data['solution']) - self.iterator) / len(self.monitoring_data['solution'])
+        self.table.deselect_row(self.iterator-1)
+        self.table.select_row(self.iterator)
+        self.Left_rack_data.configure(text = (len(self.monitoring_data['solution']) - self.iterator))
+        self.Current_solution_data.configure(text = self.monitoring_data['solution'][self.iterator-1])
+        try: 
+            self.Next_solution_data.configure(text = self.monitoring_data['solution'][self.iterator])
+        except Exception as e:
+            print(f"Error in update data: {e}")
+
         self.updateProgressBar()
-        print(self.progress_val)
 
     def updateProgressBar(self):
-        self.progress_val = 1 - ((len(self.monitoring_data['solution']) - self.iterator) / len(self.monitoring_data['solution']))
+        self.progress_val = (1 - ((len(self.monitoring_data['solution']) - self.iterator) )/ len(self.monitoring_data['solution']))
+        # self.progress_val = 
         self.progress_val = round(self.progress_val, 2)
         self.progress_bar.set(self.progress_val)
         self.percentage_label.configure(text=f"{int(self.progress_val * 100)} / 100%")
