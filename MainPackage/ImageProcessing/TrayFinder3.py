@@ -27,10 +27,10 @@ class TrayFinder:
     
     #Image processing
     def Undistorted(self, image):
-        with open('MainPackage/ImageProcessing/CalibrationMatrices/cameraMatrix.pkl', 'rb') as f1:
+        with open('FinalProject/MainPackage/ImageProcessing/CalibrationMatrices/cameraMatrix.pkl', 'rb') as f1:
             cameraMatrix = pickle.load(f1)
         
-        with open('MainPackage/ImageProcessing/CalibrationMatrices/dist.pkl', 'rb') as f2:
+        with open('FinalProject/MainPackage/ImageProcessing/CalibrationMatrices/dist.pkl', 'rb') as f2:
             dist = pickle.load(f2)
         
         h, w = image.shape[:2]
@@ -230,7 +230,7 @@ class TrayFinder:
                 break
         cap.release()
         cv2.destroyAllWindows()
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
     # TestCam = TrayFinder("raw_image.png")
     # # TestCam.ShowImage('raw image', image=TestCam.image)
@@ -242,6 +242,7 @@ if __name__ == '__main__':
     # TestCam.export_points(points=TestCam.points, name='result_undist.csv')
     # TestCam.Save_Image("Final_result.png", TestCam.contoured_image)
 
+<<<<<<< HEAD
     TestDist = TrayFinder("raw_image.png")
     TestDist.ShowImage('raw image', image=TestDist.image)
     TestDist.FindMidpoint()
@@ -253,3 +254,12 @@ if __name__ == '__main__':
     # TestDist.Contouring()
     # TestDist.Save_Image("mock1.png", TestDist.mock1)
     # TestDist.Save_Image("mock2.png", TestDist.mock2)
+=======
+    # TestDist = TrayFinder("raw_image.png")
+    # TestDist.ShowImage('raw image', image=TestDist.image)
+    # TestDist.FindMidpoint()
+    # TestDist.Save_Image("bin_image.png", TestDist.mask)
+    # TestDist.ShowImage('result', TestDist.image)
+    # TestDist.export_points(points=TestDist.points, name='result.csv')
+    # TestDist.Save_Image("Final_result.png", TestDist.contoured_image)
+>>>>>>> b641ba6b4c17468219c766a4caa5151b90c81017
