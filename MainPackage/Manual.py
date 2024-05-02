@@ -8,22 +8,18 @@ import numpy as np
 from PIL import Image
 import json
 
-
 class ManualWindow(ctk.CTkToplevel):
     def __init__(self):
         super().__init__()
-        self.folder = "FinalProject/MainPackage/Protocols"
+        self.folder = "MainPackage/Protocols"
 
         files = glob.glob(self.folder+"/*")
 
         self.file_names = [os.path.splitext(os.path.basename(file))[0] for file in files if file.endswith('.json')]
 
-        for file_name in self.file_names:
-            print(file_name)
+        # for file_name in self.file_names:
+        #     print(file_name)
 
-        # self.init_ui()
-
-    # def init_ui(self):
         self.title("Settings")
         self.tabview = ctk.CTkTabview(self)
         self.tabview.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
@@ -32,35 +28,63 @@ class ManualWindow(ctk.CTkToplevel):
 
         self.tabview.tab("Manual").grid_columnconfigure(0, weight=1)
         self.tabview.tab("Adjustment").grid_columnconfigure(0, weight=1)
-    
-        self.mode_option = ctk.CTkOptionMenu(self.tabview.tab("Adjustment") ,values = self.file_names, command=self.mode_event)
+
+        #Adjustment window
+        self.control_frame = ctk.CTkFrame(self.tabview.tab("Adjustment"))
+        self.control_frame.grid(row=0 ,column=0)
+        self.mode_option = ctk.CTkOptionMenu(self.control_frame, values = self.file_names, command=self.mode_event)
         self.mode_option.grid(row=0, column=0, padx=10, pady=10)
-        self.save_button = ctk.CTkButton(self.tabview.tab("Adjustment"), text = "SAVE", command=self.save_event)
-        self.save_button.grid(row=0, column=2, padx=10, pady=10)
+        self.save_button = ctk.CTkButton(self.control_frame, text = "SAVE", command=self.save_event)
+        self.save_button.grid(row=0, column=1, padx=10, pady=10)
+        self.delete_button = ctk.CTkButton(self.control_frame, text = "DELETE", command=self.delete_event)
+        self.delete_button.grid(row=0, column=2, padx=10, pady=10)
 
-
+        #Manual configuration window
+        self.manual_control_frame = ctk.CTkFrame(self.tabview.tab("Manual"))
+        self.manual_control_frame.grid(row=0, column=0)
+        options = [str(i) for i in range(1, 19)]
+        self.rack_number_option = ctk.CTkOptionMenu(self.manual_control_frame, values=options, command=self.rack_amount())
+        self.rack_number_option.grid(row=0, column=0, padx=10, pady=10, sticky="se")
+        self.clear_button = ctk.CTkButton(self.manual_control_frame, text="CLEAR", command=self.clear_event())
+        self.clear_button.grid(row=0, column=1, padx=10, pady=10, sticky="se")
+        self.manual_save_button = ctk.CTkButton(self.manual_control_frame, text="SAVE", command=self.save_manual_event())
+        self.manual_save_button.grid(row=0, column=2, padx=10, pady=10, sticky="se")
+        
 
     #set default value
         self.mode_option.set("Protocols")
+        self.rack_number_option.set("Rack amount")
+
+    def delete_event(self):
+        pass
     def save_event(self):
-        extracted_data = []
-        for row_data in self.entry_data:
-            extracted_row_data = [self.entry.get() for self.entry in row_data]
-            extracted_data.append(extracted_row_data)
-        print(extracted_data)
+
+        solution_list, time_list, cycle_list = [],[],[]
+        for self.entry_solution, self.entry_time, self.entry_cycle in self.entry_data:
+            solution = self.entry_solution.get()
+            time = int(self.entry_time.get())
+            cycle = int(self.entry_cycle.get())
+
+            solution_list.append(solution)
+            time_list.append(time)
+            cycle_list.append(cycle)
+
+        json_data = json.dumps({'solution':solution_list, "time":time_list, "cycle":cycle_list}, indent=4)
+
+        with open(self.path, "w") as json_file:
+            json_file.write(json_data)
+
+        print("saved successfully!")
 
     def mode_event(self, mode : str):
         self.entry_data = []
-        # pass
-        # print(self.folder+'/'+mode+'.json')
-        # print(type(mode))
-        path = os.path.join(self.folder, mode + '.json')
-        file = open(path)
+        self.path = os.path.join(self.folder, mode + '.json')
+        file = open(self.path)
         data = json.load(file)
         # self.mode_data = pd.read_json(path)
         self.data = pd.DataFrame({ 'solution' : data['solution'],
-                                    'time': data['time'],
-                                    'cycle': data['cycle']})
+                                    'time'    : data['time'],
+                                    'cycle'   : data['cycle']})
         
         self.config_frame = ctk.CTkFrame(self.tabview.tab("Adjustment"))
         self.config_frame.grid(row=1, column=0, columnspan = 2)
@@ -69,14 +93,29 @@ class ManualWindow(ctk.CTkToplevel):
     def create_widget(self):
         for widget in self.config_frame.winfo_children():
             widget.destroy()
-        for index, row in self.data.iterrows():
-            self.entry_row_data = []
-            for col, value in enumerate(row):
-                self.entry = ctk.CTkEntry(self.config_frame)
-                self.entry.grid(row=index, column=col, padx=5, pady=5)
-                self.entry.insert(index = 0, string= value)
-                self.entry_row_data.append(self.entry)
-            self.entry_data.append(self.entry_row_data)
+        for index, (solution, time, cycle) in enumerate(zip(self.data["solution"], self.data["time"], self.data["cycle"])):
+            self.entry_solution = ctk.CTkEntry(self.config_frame)
+            self.entry_solution.grid(row=index, column=0, padx=5, pady=5)
+            self.entry_solution.insert(index=0, string=solution)
+
+            self.entry_time = ctk.CTkEntry(self.config_frame)
+            self.entry_time.grid(row=index, column=1, padx=5, pady=5)
+            self.entry_time.insert(index=0, string=time)
+
+            self.entry_cycle = ctk.CTkEntry(self.config_frame)
+            self.entry_cycle.grid(row=index, column=2, padx=5, pady=5)
+            self.entry_cycle.insert(index=0, string=cycle)
+
+            self.entry_data.append((self.entry_solution, self.entry_time, self.entry_cycle))
+    
+    def save_manual_event(self):
+        pass
+
+    def rack_amount(self):
+        pass
+
+    def clear_event(self):
+        pass
 
 class askyesno(ctk.CTkToplevel):
     def __init__(self, message, focus=True):

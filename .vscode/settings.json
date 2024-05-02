@@ -1,6 +1,7 @@
 {
     "cSpell.words": [
         "aerr",
+        "arange",
         "Calib",
         "columnspan",
         "Comms",
@@ -16,6 +17,7 @@
         "imshow",
         "imutils",
         "imwrite",
+        "iterrows",
         "mapx",
         "mapy",
         "merr",
@@ -27,6 +29,7 @@
         "rowspan",
         "sumall",
         "Sumval",
+        "tabview",
         "Undist",
         "undistort",
         "vsplit",

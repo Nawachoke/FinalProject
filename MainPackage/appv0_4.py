@@ -16,38 +16,12 @@ from PIL import Image
 # from SerialComms import Comms
 import random
 import serial
+import Manual
 # import glob
 
 ctk.set_appearance_mode("System") # Modes: "System" (standard), "Dark", "Light"
 ctk.set_default_color_theme("dark-blue") # Themes: "blue" (standard), "green", "dark-blue"
 
-class ManualWindow(ctk.CTkToplevel):
-    def __init__(self):
-        super().__init__()
-
-        # self.focus = focus
-        # self.message = message
-        self.init_ui()
-    
-    def init_ui(self):
-        self.geometry("600x300")
-        self.title('mode settings')
-        self.resizable(False, False)
-        self.MainFrame = ctk.CTkFrame(self, fg_color="transparent")
-        self.MainFrame.pack(pady=10, padx=10)
-        self.label = ctk.CTkLabel(self, text="Please select mode configuration.")
-        self.label.pack(side='top',pady=10, padx=10)
-
-        self.new_protocol_button = ctk.CTkButton(self.MainFrame, text="New")
-        self.new_protocol_button.pack(side='right', padx=10, pady=10)
-        self.protocol_adjust_button = ctk.CTkButton(self.MainFrame, text="Adjust")
-        self.protocol_adjust_button.pack(side='left', padx=10, pady=10)
-
-    def adjust_event(self):
-        pass
-    
-    def new_prot_event(self):
-        pass
 class askyesno(ctk.CTkToplevel):
     def __init__(self, message, focus=True):
         super().__init__()
@@ -68,7 +42,7 @@ class askyesno(ctk.CTkToplevel):
         button_frame = ctk.CTkFrame(self, fg_color="transparent")
         button_frame.pack(pady=10)
 
-        self.warn_image = ctk.CTkImage(Image.open("FinalProject/MainPackage/image/warning-sign.png"), size=(50,50))
+        self.warn_image = ctk.CTkImage(Image.open("MainPackage/image/warning-sign.png"), size=(50,50))
         warn = ctk.CTkLabel(button_frame,image=self.warn_image, text="")
         warn.pack(side="top", padx=10, pady=10)
         yes_button = ctk.CTkButton(button_frame, text="Yes", command=lambda: self.button_click(True))
@@ -93,7 +67,7 @@ class App(ctk.CTk):
         super().__init__()
         # self.data = [(random.randint(0,100), random.randint(0,100), random.randint(1,10)) for _ in range(18)]
         try:
-            self.ser = serial.Serial('COM2', 9600)
+            self.ser = serial.Serial('COM3', 9600)
             print("Serial connection established")
         except serial.SerialException as e:
             print(f"Serial connection error:{e}")
@@ -106,7 +80,7 @@ class App(ctk.CTk):
         
         self.data_points = [(random.randint(0, 100), random.randint(0, 100), random.randint(1, 10)) for _ in range(18)]
 
-        self.iconbitmap("FinalProject/MainPackage/image/icons8-cell-50.ico")
+        self.iconbitmap("MainPackage/image/icons8-cell-50.ico")
         self.response = None
 
         self.title("Cells stain controller")
@@ -216,7 +190,7 @@ class App(ctk.CTk):
 
     def image_event(self):
         self.send_package("Homeposition")
-        self.data = TF.TrayFinder("FinalProject/raw_image.png")
+        self.data = TF.TrayFinder("raw_image.png")
         self.data.Undistorted(self.data.image)
         self.data_points = self.data.FindMidpoint()
         self.data.ShowImage('result', self.data.contoured_image)
@@ -267,7 +241,8 @@ class App(ctk.CTk):
             self.Confirm(message, mode_number)
         elif mode == "settings":
             message = "Config Protocol"
-            mode_config = ManualWindow()
+            # mode_config = ManualWindow()
+            manual_configuration_window = Manual.ManualWindow()
         else:
             pass
 
@@ -291,10 +266,10 @@ class App(ctk.CTk):
             widget.destroy()
     
     def Read_Data(self, mode_number):
-        file = open("FinalProject/MainPackage/mode_conf.json")
+        file = open("MainPackage/mode_conf.json")
         data = json.load(file)
         mode_name = data['mode ' + str(mode_number)]['name']
-        self.Mode_data = pd.read_json("FinalProject/MainPackage/mode_conf.json")
+        self.Mode_data = pd.read_json("MainPackage/mode_conf.json")
         self.monitoring_data = pd.DataFrame({  'solution'  : self.Mode_data['mode ' + str(mode_number)]['solution'],
                                                 'time'     : self.Mode_data['mode ' + str(mode_number)]['time'],
                                                 'cycle'    : self.Mode_data['mode ' + str(mode_number)]['cycle']})
