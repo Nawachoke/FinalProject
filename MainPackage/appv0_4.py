@@ -10,12 +10,13 @@ import numpy as np
 from CTkTable import *
 import threading
 import time
-import os
+# import os
 from PIL import Image
 # from manualw import ManualWindow
 # from SerialComms import Comms
 import random
 import serial
+# import glob
 
 ctk.set_appearance_mode("System") # Modes: "System" (standard), "Dark", "Light"
 ctk.set_default_color_theme("dark-blue") # Themes: "blue" (standard), "green", "dark-blue"
@@ -91,8 +92,13 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         # self.data = [(random.randint(0,100), random.randint(0,100), random.randint(1,10)) for _ in range(18)]
-        
-        self.ser = serial.Serial('COM3', 9600)
+        try:
+            self.ser = serial.Serial('COM2', 9600)
+            print("Serial connection established")
+        except serial.SerialException as e:
+            print(f"Serial connection error:{e}")
+        except Exception as e:
+            print(f"Error:{e}")
         self.iterator = 0
         self.running = False
         self.hours, self.minutes, self.seconds = 0,0,0
@@ -179,12 +185,13 @@ class App(ctk.CTk):
         self.Table_frame.grid(row=0, column=2)
 
         # set default values
-        self.appearance_mode_optionmenu.set("Dark")
+        self.appearance_mode_optionmenu.set("System")
         self.scaling_optionmenu.set("100")
         self.mode_optionmenu.set("MODE")
         self.progress_bar.set(0)
-        thread1 = threading.Thread(target=self.receive_response)
-        thread1.start()
+        self.thread1 = threading.Thread(target=self.receive_response)
+        self.thread1.setDaemon(True)
+        self.thread1.start()
 
     def change_scaling_event(self, new_scaling: str):
         new_scaling_float = int(new_scaling.replace("%", "")) / 100
@@ -192,23 +199,23 @@ class App(ctk.CTk):
     
     def Px2StepX(self, data):
         m2s = 0.2 #mm/step
-        Xfactor = 356/257
-        Xspace = 0
+        Xfactor = 370/268
+        Xspace = -130
         converted_data = ((((640 - data) / Xfactor) / m2s) + Xspace)
         return int(converted_data)
 
     def Px2StepY(self, data):
         m2s = 0.2 #mm/step
-        Yfactor = 362/265
-        Yspace = 20
-        converted_data = ((((640 - data) / Yfactor) / m2s) + Yspace)
+        Yfactor = 354/256
+        Yspace = 305
+        converted_data = ((((480 - data) / Yfactor) / m2s) + Yspace)
         return int(converted_data)
-
     
     def change_appearance_mode_event(self, new_appearance_mode: str):
         ctk.set_appearance_mode(new_appearance_mode)
 
     def image_event(self):
+        self.send_package("Homeposition")
         self.data = TF.TrayFinder("FinalProject/raw_image.png")
         self.data.Undistorted(self.data.image)
         self.data_points = self.data.FindMidpoint()
@@ -222,7 +229,7 @@ class App(ctk.CTk):
         if answer:
             self.Run_time_data.configure(text = '00:00:00')
             self.start_timer()
-            self.send_package(command="position", data_list=data_pack)
+            self.send_package(command="Homestart", data_list=data_pack)
             self.iterator = 0
 
     def stop_event(self):
@@ -316,6 +323,9 @@ class App(ctk.CTk):
                         time.sleep(0.5)  # careful with sleep, it could delay the loop
                         self.iterator += 1
                         self.Status_update()
+                    elif self.response == 'request' and self.iterator == len(self.monitoring_data['time']):
+                        print("Final request recuived. Stopping")
+                        self.FinishTask()
         # except Exception as e:
         #     print(f"Error in receive_response: {e}")
         # except KeyboardInterrupt:
@@ -334,11 +344,11 @@ class App(ctk.CTk):
         print(f"Sent JSON package: {json_data}", self.iterator)
 
     def Status_update(self):
-        self.table.deselect_row(self.iterator-1)
-        self.table.select_row(self.iterator)
-        self.Left_rack_data.configure(text = (len(self.monitoring_data['solution']) - self.iterator))
-        self.Current_solution_data.configure(text = self.monitoring_data['solution'][self.iterator-1])
         try: 
+            self.table.deselect_row(self.iterator-1)
+            self.table.select_row(self.iterator)
+            self.Left_rack_data.configure(text = (len(self.monitoring_data['solution']) - self.iterator))
+            self.Current_solution_data.configure(text = self.monitoring_data['solution'][self.iterator-1])
             self.Next_solution_data.configure(text = self.monitoring_data['solution'][self.iterator])
         except Exception as e:
             print(f"Error in update data: {e}")
@@ -387,6 +397,24 @@ class App(ctk.CTk):
         seconds_string = f'{self.seconds}' if self.seconds > 9 else f'0{self.seconds}'
         self.Run_time_data.configure(text=hours_string + ':' + minutes_string + ':' + seconds_string)
         self.update_time = self.Run_time_data.after(1000, self.update)
+    
+    def FinishTask(self):
+        Task_accept =askyesno(message="The task is finished", focus=True)
+        answer = Task_accept.get_result()
+        if answer:
+            time.sleep(0.2)
+            self.pause_timer()
+            try:
+                self.ser.close()
+                self.thread1.join()
+            except Exception as e:
+                print(f"Error message : {e}")
+            # try:
+            # App.destroy(self)
+            # self.destroy()
+            # except:
+            #     print("Error closing app")
+            sys.exit(self)
 
 if __name__ == "__main__":
     app = App()

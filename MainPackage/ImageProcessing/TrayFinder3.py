@@ -46,8 +46,10 @@ class TrayFinder:
     def HSV_threshold(self):
         self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
         self.blur = cv2.GaussianBlur(self.gray, (3,3), 0)
-        lower = np.array([61,   105,  202])
-        upper = np.array([108,  255, 255])
+        # lower = np.array([61,   105,  202])
+        # upper = np.array([108,  255, 255])
+        lower = np.array([55, 0, 199])
+        upper = np.array([108, 255, 255])
         self.mask = cv2.inRange(self.blur, lower, upper)
         return self.mask
 
@@ -242,14 +244,10 @@ if __name__ == '__main__':
     # TestCam.export_points(points=TestCam.points, name='result_undist.csv')
     # TestCam.Save_Image("Final_result.png", TestCam.contoured_image)
 
-    TestDist = TrayFinder("raw_image.png")
+    TestDist = TrayFinder("FinalProject/raw_image.png")
     TestDist.ShowImage('raw image', image=TestDist.image)
     TestDist.FindMidpoint()
     TestDist.Save_Image("bin_image.png", TestDist.mask)
     TestDist.ShowImage('result', TestDist.image)
     TestDist.export_points(points=TestDist.points, name='result.csv')
     TestDist.Save_Image("Final_result.png", TestDist.contoured_image)
-
-    # TestDist.Contouring()
-    # TestDist.Save_Image("mock1.png", TestDist.mock1)
-    # TestDist.Save_Image("mock2.png", TestDist.mock2)
