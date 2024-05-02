@@ -311,7 +311,7 @@ class App(ctk.CTk):
                         data_pack.update({"x": self.Px2StepX(self.data_points[self.iterator][0]), 
                                           "y": self.Px2StepY(self.data_points[self.iterator][1]), 
                                         #   "t": self.monitoring_data['time'][self.iterator]})
-                                        "t":len(self.monitoring_data['time'])})
+                                        "t": self.monitoring_data['time'][self.iterator]})
                         self.send_package("position", data_list=data_pack)
                         time.sleep(0.5)  # careful with sleep, it could delay the loop
                         self.iterator += 1
