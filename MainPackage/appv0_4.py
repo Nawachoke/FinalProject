@@ -3,20 +3,17 @@ from typing import Optional, Tuple, Union
 import customtkinter as ctk
 import sys
 import json
-# from ImageProcessing import TrayFinder3
 import ImageProcessing.TrayFinder3 as TF
 import pandas as pd
 import numpy as np
 from CTkTable import *
 import threading
 import time
-# import os
 from PIL import Image
-# from manualw import ManualWindow
-# from SerialComms import Comms
 import random
 import serial
 import Manual
+# import os
 # import glob
 
 ctk.set_appearance_mode("System") # Modes: "System" (standard), "Dark", "Light"
@@ -284,7 +281,6 @@ class App(ctk.CTk):
     #communication thread
     def receive_response(self):
         data_pack = {"x": 0, "y": 0, "t": 0}
-        # try:
         while True:
                 if self.ser.in_waiting > 0:
                     self.response = self.ser.readline().decode('utf-8').strip()
@@ -301,11 +297,6 @@ class App(ctk.CTk):
                     elif self.response == 'request' and self.iterator == len(self.monitoring_data['time']):
                         print("Final request received. Stopping")
                         self.FinishTask()
-        # except Exception as e:
-        #     print(f"Error in receive_response: {e}")
-        # except KeyboardInterrupt:
-        #     pass
-
 
     def send_package(self, command, data_list=None):
         if data_list:
@@ -332,7 +323,6 @@ class App(ctk.CTk):
 
     def updateProgressBar(self):
         self.progress_val = (1 - ((len(self.monitoring_data['solution']) - self.iterator) )/ len(self.monitoring_data['solution']))
-        # self.progress_val = 
         self.progress_val = round(self.progress_val, 2)
         self.progress_bar.set(self.progress_val)
         self.percentage_label.configure(text=f"{int(self.progress_val * 100)} / 100%")
@@ -384,11 +374,6 @@ class App(ctk.CTk):
                 self.thread1.join()
             except Exception as e:
                 print(f"Error message : {e}")
-            # try:
-            # App.destroy(self)
-            # self.destroy()
-            # except:
-            #     print("Error closing app")
             sys.exit(self)
 
 if __name__ == "__main__":

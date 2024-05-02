@@ -12,6 +12,8 @@
         "edgecolors",
         "Findpeaks",
         "hier",
+        "Homeposition",
+        "Homestart",
         "hsplit",
         "imread",
         "imshow",

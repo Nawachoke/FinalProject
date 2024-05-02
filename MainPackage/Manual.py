@@ -19,7 +19,7 @@ class ManualWindow(ctk.CTkToplevel):
 
         # for file_name in self.file_names:
         #     print(file_name)
-
+        self.grab_set()
         self.title("Settings")
         self.tabview = ctk.CTkTabview(self)
         self.tabview.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
