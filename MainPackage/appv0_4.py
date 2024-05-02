@@ -299,7 +299,7 @@ class App(ctk.CTk):
                         self.iterator += 1
                         self.Status_update()
                     elif self.response == 'request' and self.iterator == len(self.monitoring_data['time']):
-                        print("Final request recuived. Stopping")
+                        print("Final request received. Stopping")
                         self.FinishTask()
         # except Exception as e:
         #     print(f"Error in receive_response: {e}")
