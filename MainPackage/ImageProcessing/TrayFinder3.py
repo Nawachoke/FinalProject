@@ -21,6 +21,9 @@ class TrayFinder:
         self.morph = None
         self.contoured_image = None
         self.merr = None
+
+        # self.mock1 = None
+        # self.mock2 = None
     
     #Image processing
     def Undistorted(self, image):
@@ -57,13 +60,14 @@ class TrayFinder:
         # self.morph = cv2.morphologyEx(masked, cv2.MORPH_OPEN, kernel, iterations=1)
         ctrs, hier = cv2.findContours(masked, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         self.contoured_image = cv2.drawContours(self.image, ctrs, -1, (0, 0, 255), 2)
-
+        # self.mock1 = self.contoured_image
+        # self.Save_Image("mock1.png", TestDist.mock1)
         return ctrs
 
-    def Findpeaks(self):
-        masked = self.HSV_threshold()
-        rows = np.vsplit(masked, np.shape(masked)[0])
-        cols = np.hsplit(masked, np.shape(masked)[1])
+    # def Findpeaks(self):
+    #     masked = self.HSV_threshold()
+    #     rows = np.vsplit(masked, np.shape(masked)[0])
+    #     cols = np.hsplit(masked, np.shape(masked)[1])
 
     def FindMidpoint(self):
         contour = self.Contouring()
@@ -79,10 +83,14 @@ class TrayFinder:
             area = cv2.contourArea(cnt)
             midpoint.append([x1, y1])
             areas.append(area)
+        # self.mock2 = self.mock1
+        # for i in range(len(midpoint)):
+        #     cv2.circle(self.mock1, (midpoint[i]), radius=6, color=(0,0,0), thickness=-1)
+        # TestDist.Save_Image("mock2.png", TestDist.mock1)
 
         self.merr, aerr = self.point_filtering(areas, midpoint)
         # print(self.merr)
-        # points=[]
+        # points=[]    # TestDist.Save_Image("mock1.png", TestDist.mock1)
         # for 
         self.points = self.Find_Closest(self.merr)
 
