@@ -17,8 +17,8 @@ class ManualWindow(ctk.CTkToplevel):
 
         self.file_names = [os.path.splitext(os.path.basename(file))[0] for file in files if file.endswith('.json')]
 
-        # for file_name in self.file_names:
-        #     print(file_name)
+        for file_name in self.file_names:
+            print(file_name)
         self.grab_set()
         self.title("Settings")
         self.tabview = ctk.CTkTabview(self)
@@ -43,12 +43,14 @@ class ManualWindow(ctk.CTkToplevel):
         self.manual_control_frame = ctk.CTkFrame(self.tabview.tab("Manual"))
         self.manual_control_frame.grid(row=0, column=0)
         options = [str(i) for i in range(1, 19)]
-        self.rack_number_option = ctk.CTkOptionMenu(self.manual_control_frame, values=options, command=self.rack_amount())
+        self.rack_number_option = ctk.CTkOptionMenu(self.manual_control_frame, values=options, command=self.rack_amount)
         self.rack_number_option.grid(row=0, column=0, padx=10, pady=10, sticky="se")
-        self.clear_button = ctk.CTkButton(self.manual_control_frame, text="CLEAR", command=self.clear_event())
+        self.clear_button = ctk.CTkButton(self.manual_control_frame, text="CLEAR", command=self.clear_event)
         self.clear_button.grid(row=0, column=1, padx=10, pady=10, sticky="se")
-        self.manual_save_button = ctk.CTkButton(self.manual_control_frame, text="SAVE", command=self.save_manual_event())
+        self.manual_save_button = ctk.CTkButton(self.manual_control_frame, text="SAVE", command=self.save_manual_event)
         self.manual_save_button.grid(row=0, column=2, padx=10, pady=10, sticky="se")
+        self.manual_input_frame = ctk.CTkFrame(self.tabview.tab("Manual"))
+        self.manual_input_frame.grid(row=1, column=0, padx=5, pady=5)
         
 
     #set default value
@@ -111,8 +113,20 @@ class ManualWindow(ctk.CTkToplevel):
     def save_manual_event(self):
         pass
 
-    def rack_amount(self):
-        pass
+    def rack_amount(self, number : int):
+        # print(number)
+        for widget in self.manual_input_frame.winfo_children():
+            widget.destroy()
+
+        for i in range(int(number)):
+            self.manual_label = ctk.CTkLabel(self.manual_input_frame, text="1", font=ctk.CTkFont(size=16, weight="bold"))
+            self.manual_input_frame.grid(row=i, column=0, padx=5, pady=5)
+            self.entry_manual_solution = ctk.CTkEntry(self.manual_input_frame, placeholder_text="solution")
+            self.entry_manual_solution.grid(row=i, column=1, padx=5, pady=5)
+            self.entry_manual_time = ctk.CTkEntry(self.manual_input_frame, placeholder_text="time (minutes)")
+            self.entry_manual_time.grid(row=i, column=2, padx=5, pady=5)
+            self.entry_manual_cycle = ctk.CTkEntry(self.manual_input_frame, placeholder_text="cycle")
+            self.entry_manual_cycle.grid(row=i, column=3, padx=5, pady=5)
 
     def clear_event(self):
         pass
@@ -157,6 +171,6 @@ class askyesno(ctk.CTkToplevel):
         self.wait_window()
         return self.button_clicked 
         
-    if __name__ == '__main__':
-        app = ManualWindow()
-        app.mainloop()
+if __name__ == '__main__':
+    app = ManualWindow()
+    app.mainloop()
