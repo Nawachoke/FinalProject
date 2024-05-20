@@ -227,7 +227,7 @@ class TrayFinder:
         
         while(True):
             ret, frame = cap.read()
-            cv2.imshow("frame", frame)
+            cv2.imshow("Press Q to exit!", frame)
             if cv2.waitKey(1) and 0xFF == ord('q'):
                 break
         cap.release()

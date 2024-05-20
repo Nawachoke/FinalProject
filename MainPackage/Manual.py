@@ -51,8 +51,7 @@ class ManualWindow(ctk.CTkToplevel):
         self.manual_save_button.grid(row=0, column=2, padx=10, pady=10, sticky="se")
         self.manual_input_frame = ctk.CTkFrame(self.tabview.tab("Manual"))
         self.manual_input_frame.grid(row=1, column=0, padx=5, pady=5)
-        
-
+    
     #set default value
         self.mode_option.set("Protocols")
         self.rack_number_option.set("Rack amount")

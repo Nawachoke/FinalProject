@@ -1,0 +1,4 @@
+{"step":["De-paraffinization","Counterstain"],
+            "solution":["xylene substitue I","xylene substitue II","100% ethanol I","100% ethanol II","95% ethanol I","95% ethanol II","wash in DW","wash in running tap water","Counterstain with Hematoxylin","wash in tap wawer","dehydrate through 95, 100% alcohol","xylene substitute","xylene substitute"],
+            "time":[5,5,2,2,2,2,5,5,5,5,2,5,5],
+            "cycle":[0,0,0,0,0,0,0,0,0,0,0,0,0]}

@@ -13,8 +13,9 @@ from PIL import Image
 import random
 import serial
 import Manual
-# import os
-# import glob
+import os
+import glob
+import cv2
 
 ctk.set_appearance_mode("System") # Modes: "System" (standard), "Dark", "Light"
 ctk.set_default_color_theme("dark-blue") # Themes: "blue" (standard), "green", "dark-blue"
@@ -63,6 +64,12 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         # self.data = [(random.randint(0,100), random.randint(0,100), random.randint(1,10)) for _ in range(18)]
+        self.folder = "MainPackage/Protocols"
+        files = glob.glob(self.folder+"/*")
+        self.file_names = [os.path.splitext(os.path.basename(file))[0] for file in files if file.endswith('.json')]
+        for file_name in self.file_names:
+            print(file_name)
+        self.file_names.append('settings')
         try:
             self.ser = serial.Serial('COM3', 9600)
             print("Serial connection established")
@@ -75,7 +82,8 @@ class App(ctk.CTk):
         self.hours, self.minutes, self.seconds = 0,0,0
         self.progress_val = 0.0
         
-        self.data_points = [(random.randint(0, 100), random.randint(0, 100), random.randint(1, 10)) for _ in range(18)]
+        # self.data_points = [(random.randint(0, 100), random.randint(0, 100), random.randint(1, 10)) for _ in range(18)]
+        # self.data_points = pd.read_csv('MainPackage/ImageProcessing/previous_points.csv')
 
         self.iconbitmap("MainPackage/image/icons8-cell-50.ico")
         self.response = None
@@ -95,7 +103,7 @@ class App(ctk.CTk):
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20,10))
         self.mode_optionmenu_label = ctk.CTkLabel(self.sidebar_frame, text="Staining mode", anchor="w")
         self.mode_optionmenu_label.grid(row=1, column=0, padx=20, pady=10)
-        self.mode_optionmenu = ctk.CTkOptionMenu(self.sidebar_frame, values=["IHC", "H&E", "settings"], command=self.mode_event)
+        self.mode_optionmenu = ctk.CTkOptionMenu(self.sidebar_frame, values=self.file_names, command=self.mode_event)
         self.mode_optionmenu.grid(row=2, column=0, padx=20, pady=10)
         self.image_button = ctk.CTkButton(self.sidebar_frame, text="IMAGE", command=self.image_event, font=ctk.CTkFont(size=16))
         self.image_button.grid(row=3, column=0, padx=20, pady=10)
@@ -103,8 +111,8 @@ class App(ctk.CTk):
         self.start_button.grid(row = 4, column=0, padx=20, pady=10)
         self.stop_button = ctk.CTkButton(self.sidebar_frame, text="STOP", command=self.stop_event, font=ctk.CTkFont(size=16))
         self.stop_button.grid(row=5, column = 0, padx=20, pady=10)
-        self.pause_button = ctk.CTkButton(self.sidebar_frame, text="PAUSE", command=self.pause_event, font=ctk.CTkFont(size=16))
-        self.pause_button.grid(row=6, column=0, padx=20, pady=10)
+        self.camera_button = ctk.CTkButton(self.sidebar_frame, text="CAMERA", command=self.camera_event, font=ctk.CTkFont(size=16))
+        self.camera_button.grid(row=6, column=0, padx=20, pady=10)
         self.appearance_mode_label = ctk.CTkLabel(self.sidebar_frame, text="Appearance mode", anchor="w")
         self.appearance_mode_label.grid(row=8, column=0, padx=20, pady=(10,0))
         self.appearance_mode_optionmenu = ctk.CTkOptionMenu(self.sidebar_frame ,values=["Light", "Dark", "System"], command=self.change_appearance_mode_event)
@@ -191,6 +199,7 @@ class App(ctk.CTk):
         self.data.Undistorted(self.data.image)
         self.data_points = self.data.FindMidpoint()
         self.data.ShowImage('result', self.data.contoured_image)
+        self.data.export_points(self.data.points, name='MainPackage/ImageProcessing/previous_points.csv')
         print(type(self.data_points[0][0]))
     
     def start_event(self):
@@ -209,11 +218,19 @@ class App(ctk.CTk):
         if answer:
             self.send_package(command="stop")
 
-    def pause_event(self):
-        Pause_confirm = askyesno(message="Pause_machine?", focus=True)
+    def camera_event(self):
+        Pause_confirm = askyesno(message="Monitor real time video?", focus=True)
         answer = Pause_confirm.get_result()
         if answer:
-            self.send_package(command="pause")
+            # self.send_package(command="pause")
+            cap = cv2.VideoCapture(1)
+            if not cap.isOpened():
+                print("Error : Unable to open camera.")
+            while(True):
+                ret, frame = cap.read()
+                cv2.imshow("Press Q to exit!", frame)
+                if cv2.waitKey(1) and 0xFF == ord('q'):
+                    break
 
     def show_table(self):
         RawData = [self.monitoring_data['solution'],
@@ -228,53 +245,36 @@ class App(ctk.CTk):
 
     def mode_event(self, mode : str):
         self.mode = mode
-        if mode == "H&E":
-            message = "Start with H & E mode"
-            mode_number = 1
-            self.Confirm(message, mode_number)
-        elif mode == "IHC":
-            message = "Start with IHC mode"
-            mode_number = 2
-            self.Confirm(message, mode_number)
-        elif mode == "settings":
-            message = "Config Protocol"
-            # mode_config = ManualWindow()
+        if mode != 'settings':
+            message = 'Start with '+mode+' mode'
+            self.Confirm(message)
+        else : 
             manual_configuration_window = Manual.ManualWindow()
-        else:
-            pass
 
     def Confirm(self, message, mode_number=None):
         Mode_confirm = askyesno(message=message, focus=True)
         answer = Mode_confirm.get_result()
 
-        if answer == True and mode_number >= 1:
-            self.mode_name = self.Read_Data(mode_number)
-            self.Protocol_data.configure(text=self.mode_name)
+        if answer == True:
+            self.Read_Data(self.mode)
+            self.Protocol_data.configure(text=self.mode)
             self.iterator = 0
             self.DestroyTable()
             self.show_table()
             self.Status_update()
-        
-        # elif answer == True:
-        #     mod
 
+    def Read_Data(self, mode : str):
+        self.path = os.path.join(self.folder, mode + '.json')
+        file = open(self.path)
+        data = json.load(file)
+        self.monitoring_data = pd.DataFrame({ 'solution' : data['solution'],
+                                              'time'     : data['time'],
+                                              'cycle'    : data['cycle']})
+        
     def DestroyTable(self):
         for widget in self.Table_frame.winfo_children() :
             widget.destroy()
     
-    def Read_Data(self, mode_number):
-        file = open("MainPackage/mode_conf.json")
-        data = json.load(file)
-        mode_name = data['mode ' + str(mode_number)]['name']
-        self.Mode_data = pd.read_json("MainPackage/mode_conf.json")
-        self.monitoring_data = pd.DataFrame({  'solution'  : self.Mode_data['mode ' + str(mode_number)]['solution'],
-                                                'time'     : self.Mode_data['mode ' + str(mode_number)]['time'],
-                                                'cycle'    : self.Mode_data['mode ' + str(mode_number)]['cycle']})
-        print(len(self.monitoring_data['time']))
-        print(len(self.monitoring_data['solution']))
-        print(len(self.monitoring_data['cycle']))
-        return mode_name
-
     def DataOverwrite(self):
         pass
     
@@ -288,7 +288,6 @@ class App(ctk.CTk):
                     if self.response == "request" and self.iterator != len(self.data_points):
                         data_pack.update({"x": self.Px2StepX(self.data_points[self.iterator][0]), 
                                           "y": self.Px2StepY(self.data_points[self.iterator][1]), 
-                                        #   "t": self.monitoring_data['time'][self.iterator]})
                                         "t": self.monitoring_data['time'][self.iterator]})
                         self.send_package("position", data_list=data_pack)
                         time.sleep(0.5)  # careful with sleep, it could delay the loop
