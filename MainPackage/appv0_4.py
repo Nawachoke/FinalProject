@@ -217,20 +217,24 @@ class App(ctk.CTk):
         answer = Stop_confirm.get_result()
         if answer:
             self.send_package(command="stop")
+            self.DataOverwrite()
 
     def camera_event(self):
         Pause_confirm = askyesno(message="Monitor real time video?", focus=True)
         answer = Pause_confirm.get_result()
         if answer:
             # self.send_package(command="pause")
-            cap = cv2.VideoCapture(1)
+            cap = cv2.VideoCapture(0)
             if not cap.isOpened():
                 print("Error : Unable to open camera.")
             while(True):
                 ret, frame = cap.read()
                 cv2.imshow("Press Q to exit!", frame)
                 if cv2.waitKey(1) and 0xFF == ord('q'):
+                    
                     break
+                cap.release()
+                cv2.destroyAllWindows()
 
     def show_table(self):
         RawData = [self.monitoring_data['solution'],
@@ -270,13 +274,15 @@ class App(ctk.CTk):
         self.monitoring_data = pd.DataFrame({ 'solution' : data['solution'],
                                               'time'     : data['time'],
                                               'cycle'    : data['cycle']})
+        self.cycle_data = np.zeros(self.monitoring_data['cycle'].shape[0])
         
     def DestroyTable(self):
         for widget in self.Table_frame.winfo_children() :
             widget.destroy()
     
     def DataOverwrite(self):
-        pass
+        self.monitoring_data['cycle'] = self.cycle_data
+        self.monitoring_data = self.monitoring_data.to_json(self.path)
     
     #communication thread
     def receive_response(self):
@@ -291,6 +297,7 @@ class App(ctk.CTk):
                                         "t": self.monitoring_data['time'][self.iterator]})
                         self.send_package("position", data_list=data_pack)
                         time.sleep(0.5)  # careful with sleep, it could delay the loop
+                        self.cycle_data[self.iterator] += 1
                         self.iterator += 1
                         self.Status_update()
                     elif self.response == 'request' and self.iterator == len(self.monitoring_data['time']):
@@ -365,6 +372,7 @@ class App(ctk.CTk):
     def FinishTask(self):
         Task_accept =askyesno(message="The task is finished", focus=True)
         answer = Task_accept.get_result()
+        self.DataOverwrite()
         if answer:
             time.sleep(0.2)
             self.pause_timer()
