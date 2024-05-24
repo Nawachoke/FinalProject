@@ -67,8 +67,8 @@ class App(ctk.CTk):
         self.folder = "MainPackage/Protocols"
         files = glob.glob(self.folder+"/*")
         self.file_names = [os.path.splitext(os.path.basename(file))[0] for file in files if file.endswith('.json')]
-        for file_name in self.file_names:
-            print(file_name)
+        # for file_name in self.file_names:
+        #     print(file_name)
         self.file_names.append('settings')
         try:
             self.ser = serial.Serial('COM3', 9600)
