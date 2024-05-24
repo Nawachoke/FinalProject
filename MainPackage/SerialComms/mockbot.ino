@@ -86,3 +86,17 @@ void ShakeRack(){
   // Implement shaking method to spilt chemical from the rack
   Serial.println("Shaking the rack!");
 }
+
+void loop(){
+  NameOfFunction(30, 250)
+  result = function2()
+}
+void NameOfFunction(int yourinput1, int yourinput2){
+  // your code
+  deylay(yourinput1 * 100)
+}
+int function2(){
+  //your code
+  x = 100
+  return x
+}

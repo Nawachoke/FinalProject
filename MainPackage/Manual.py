@@ -57,25 +57,29 @@ class ManualWindow(ctk.CTkToplevel):
         self.rack_number_option.set("Rack amount")
 
     def delete_event(self):
+        del_con = askyesno(message="Delete confirmation", focus=True)
+        answer = del_con.get_result()
         pass
     def save_event(self):
+        save_con = askyesno(message="Save confirmation", focus=True)
+        answer = save_con.get_result()
+        if answer:
+            solution_list, time_list, cycle_list = [],[],[]
+            for self.entry_solution, self.entry_time, self.entry_cycle in self.entry_data:
+                solution = self.entry_solution.get()
+                time = int(self.entry_time.get())
+                cycle = int(self.entry_cycle.get())
 
-        solution_list, time_list, cycle_list = [],[],[]
-        for self.entry_solution, self.entry_time, self.entry_cycle in self.entry_data:
-            solution = self.entry_solution.get()
-            time = int(self.entry_time.get())
-            cycle = int(self.entry_cycle.get())
+                solution_list.append(solution)
+                time_list.append(time)
+                cycle_list.append(cycle)
 
-            solution_list.append(solution)
-            time_list.append(time)
-            cycle_list.append(cycle)
+            json_data = json.dumps({'solution':solution_list, "time":time_list, "cycle":cycle_list}, indent=4)
 
-        json_data = json.dumps({'solution':solution_list, "time":time_list, "cycle":cycle_list}, indent=4)
+            with open(self.path, "w") as json_file:
+                json_file.write(json_data)
 
-        with open(self.path, "w") as json_file:
-            json_file.write(json_data)
-
-        print("saved successfully!")
+            print("saved successfully!")
 
     def mode_event(self, mode : str):
         self.entry_data = []
@@ -110,6 +114,7 @@ class ManualWindow(ctk.CTkToplevel):
             self.entry_data.append((self.entry_solution, self.entry_time, self.entry_cycle))
     
     def save_manual_event(self):
+        
         pass
 
     def rack_amount(self, number : int):
@@ -150,7 +155,7 @@ class askyesno(ctk.CTkToplevel):
         button_frame = ctk.CTkFrame(self, fg_color="transparent")
         button_frame.pack(pady=10)
 
-        self.warn_image = ctk.CTkImage(Image.open("FinalProject/MainPackage/image/warning-sign.png"), size=(50,50))
+        self.warn_image = ctk.CTkImage(Image.open("MainPackage/image/warning-sign.png"), size=(50,50))
         warn = ctk.CTkLabel(button_frame,image=self.warn_image, text="")
         warn.pack(side="top", padx=10, pady=10)
         yes_button = ctk.CTkButton(button_frame, text="Yes", command=lambda: self.button_click(True))
